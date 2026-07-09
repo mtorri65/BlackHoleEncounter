@@ -1,0 +1,99 @@
+# ===========================================================
+# Solar System + Black Hole flyby simulation parameters
+# Compatible with solar_system_bh_rebound13.py
+# ===========================================================
+
+# -----------------------------------------------------------
+# TIME / EPHEMERIS
+# -----------------------------------------------------------
+epoch: "1873-09-01T00:00:00Z"     # ISO8601 UTC
+kernel: "de440s"                  # Skyfield will fetch if missing (uses DE440s)
+
+# -----------------------------------------------------------
+# BLACK HOLE HYPERBOLIC ORBIT (relative to the Sun)
+# (Use either single values OR *_range with "min,max,step")
+# -----------------------------------------------------------
+bh_mass_msun: 0.1                 # Black hole mass [Msun]
+
+# Example sweep options (uncomment one/both to sweep):
+#bh_rp_au_range: 0.5, 1.5, 0.25   # Periapsis distance sweep [AU]
+#bh_vinf_kms_range: 100.0, 300.0, 50.0  # V_infinity sweep [km/s]
+#bh_inc_deg_range: 0.0, 30.0, 10.0  # Inclination sweep [deg]
+#bh_tperi_offset_days_range: 29200, 43800, 1460 
+#bh_Omega_deg_range: 0.0, 270.0, 90.0    
+#bh_omega_deg_range: 0.0, 270.0, 90.0    
+
+# Single-run values (used if *_range not set):
+bh_rp_au: "0.25, 1.5, 0.25"                    # Periapsis distance [AU]
+bh_vinf_kms: 25.0                 # V_infinity [km/s]
+bh_inc_deg: 0.0                   # Inclination i [deg]
+bh_tperi_offset_days: 56210        # BH reaches perihelion N days after epoch
+bh_Omega_deg: 0.0                # Longitude of ascending node Ω [deg]
+bh_omega_deg:  0.0               # Argument of periapsis ω [deg]
+
+# -----------------------------------------------------------
+# INTEGRATION SETTINGS
+# -----------------------------------------------------------
+duration_days: 112420               # Total span to integrate [days] (365 days = 1 year)
+dump_interval_days: 1            # Write compressed snapshots every N days
+output_interval_days: 1           # Log samples for Excel/plots every N days
+
+# Hybrid integrator (Mercurius if available, else WHFast)
+dt_days: 0.01                      # Timestep for WHFast/Mercurius [days]
+mercurius_hillfac: 3.0            # Encounter sphere = hillfac × mutual Hill radius
+mercurius_recalc_dt: 1            # If exposed by your REBOUND build
+
+# -----------------------------------------------------------
+# ASTEROID BELT TRACERS
+# -----------------------------------------------------------
+n_belt: 0                       # Number of massless belt particles
+# (a in 2–3.5 AU, e in 0–0.15, i in 0–10 deg are generated in code)
+
+# -----------------------------------------------------------
+# SIZE & HAZARD MODEL (post-processing)
+# -----------------------------------------------------------
+size_slope: 2.5                   # Cumulative slope b in N(>D) ~ D^{-b}
+size_min_km: 0.1
+size_max_km: 50.0
+size_seed: 1234
+real_ge1km_count: 1200000         # Assumed real ≥1 km population
+per_object_impact_prob_yr: 1.0e-8 # Per-object annual impact probability
+
+# -----------------------------------------------------------
+# WEBGL VISUALIZER (built-in REBOUND server)
+# -----------------------------------------------------------
+visualizer_enable: false           # Start local WebGL viewer during run
+visualizer_port: 1234             # Open http://localhost:1234 while it runs
+
+# -----------------------------------------------------------
+# OPTIONAL: SIMULATION ARCHIVE (for replay / post-viewing)
+# -----------------------------------------------------------
+archive_enable: false             # true = save a .bin SimulationArchive
+archive_interval_days: 5.0        # Snapshot interval in archive [days]
+archive_filename: "archive.bin"   # Archive filename (auto-prefixed per run)
+write_npz: false
+write_mp4: false
+
+write_uncertainty_csv: true
+uncertainty_bodies: all
+compare_baseline_bh_mass_msun: 0.0
+bh_state_fixed_mu: true     # BH (x,v) at epoch identical across different bh_mass_msun
+move_to_com: false          # avoid coordinate/frame shifts when bh_mass_msun changes
+debug_initial_state: true   # prints the sanity-check block at t=0
+
+# -----------------------------------------------------------
+# OUTPUTS
+# -----------------------------------------------------------
+# All outputs saved under:
+#   simulations/YYYYMMDD_HHMMSS/<STAMP>__rp<...>__vinf<...>/
+#     ├── <STAMP>__input.yaml
+#     ├── <STAMP>__snapshot_XXXXXX.npz
+#     ├── <STAMP>__orbits__<rp>__<mbh>.xlsx
+#     ├── <STAMP>__belt_run_before.csv
+#     ├── <STAMP>__belt_run_after.csv
+#     ├── <STAMP>__belt_run__<rp>__<m>_ae_scatter.png
+#     ├── <STAMP>__belt_run__<rp>__<m>_delta_hist.png
+#     ├── <STAMP>__belt_run_deltas.csv
+#     ├── <STAMP>__belt_crossers_size_histogram.csv/.png/.svg
+#     ├── <STAMP>__hazard_summary.txt
+#     └── <STAMP>__heliocentric_plot.png
