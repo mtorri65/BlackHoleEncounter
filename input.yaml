@@ -24,12 +24,12 @@ bh_mass_msun: 0.1                 # Black hole mass [Msun]
 #bh_omega_deg_range: 0.0, 270.0, 90.0    
 
 # Single-run values (used if *_range not set):
-bh_rp_au: "0.25, 1.5, 0.25"                    # Periapsis distance [AU]
+bh_rp_au: "0.25, 1.5, 0.25"       # Periapsis distance [AU]
 bh_vinf_kms: 25.0                 # V_infinity [km/s]
-bh_inc_deg: 0.0                   # Inclination i [deg]
-bh_tperi_offset_days: 56210        # BH reaches perihelion N days after epoch
-bh_Omega_deg: 0.0                # Longitude of ascending node Ω [deg]
-bh_omega_deg:  0.0               # Argument of periapsis ω [deg]
+bh_inc_deg: "-90, 90, 30"         # Inclination i [deg]
+bh_tperi_offset_days: 56210       # BH reaches perihelion N days after epoch
+bh_Omega_deg: "0, 360, 90"                # Longitude of ascending node Ω [deg]
+bh_omega_deg: "0, 360, 90"                # Argument of periapsis ω [deg]
 
 # -----------------------------------------------------------
 # INTEGRATION SETTINGS
@@ -68,8 +68,8 @@ visualizer_port: 1234             # Open http://localhost:1234 while it runs
 # -----------------------------------------------------------
 # OPTIONAL: SIMULATION ARCHIVE (for replay / post-viewing)
 # -----------------------------------------------------------
-archive_enable: false             # true = save a .bin SimulationArchive
-archive_interval_days: 5.0        # Snapshot interval in archive [days]
+archive_enable: true             # true = save a .bin SimulationArchive
+archive_interval_days: 1.0        # Snapshot interval in archive [days]
 archive_filename: "archive.bin"   # Archive filename (auto-prefixed per run)
 write_npz: false
 write_mp4: false

@@ -36,6 +36,10 @@ Resuming:
 """
 
 import math
+import os
+import sys
+import time
+import traceback
 import yaml
 import argparse
 import numpy as np
@@ -50,7 +54,13 @@ from datetime import datetime, timezone
 import shutil
 from itertools import product
 from datetime import timedelta
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from openpyxl.utils import get_column_letter
+
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 
 import rebound
@@ -1692,10 +1702,55 @@ def run_one(params, sub_dir: Path, params_src_path: Path):
     print("Done.")
 
 
+def _run_one_worker(params, sub_dir: Path, params_src_path: Path, sub_name: str):
+    """
+    Picklable top-level wrapper around run_one() for use with
+    ProcessPoolExecutor. Each combo in a sweep is fully independent (its own
+    Simulation, its own sub_dir), so this isolates one combo's failure from
+    the rest of the batch instead of letting one bad case kill the whole
+    sweep, and reports success/failure back to the main process.
+    """
+    print(f"[worker] Starting: {sub_name}")
+    try:
+        run_one(params, sub_dir, params_src_path)
+        print(f"[worker] Finished: {sub_name}")
+        return sub_name, True, None
+    except Exception:
+        err = traceback.format_exc()
+        try:
+            print(f"[worker] FAILED: {sub_name}\n{err}")
+        except UnicodeEncodeError:
+            print(f"[worker] FAILED: {sub_name} (see returned traceback; console could not display it)")
+        return sub_name, False, err
+
+
+def _worker_init():
+    """
+    ProcessPoolExecutor initializer, run once per spawned worker process.
+
+    A freshly spawned worker on Windows does not inherit the main process's
+    console/UTF-8 stdout configuration and can default to a legacy codepage
+    (e.g. cp1252). Several print() calls in this module use non-ASCII
+    characters (e.g. "->" as "→", "Omega"/"omega" as Greek letters), which
+    would otherwise crash the worker with UnicodeEncodeError the first time
+    one is printed.
+    """
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+
 # ===========================================================
 # Main (with resume support)
 # ===========================================================
 def main():
+    # Some print() calls below use non-ASCII characters (e.g. "→"). Console
+    # stdout is usually UTF-8-capable, but redirecting to a file/pipe can fall
+    # back to the system codepage (cp1252 on this machine) and crash on them.
+    _worker_init()
+
     ap = argparse.ArgumentParser(
         description="Solar System + BH + Belt (params from YAML)"
     )
@@ -1709,7 +1764,49 @@ def main():
             "Deletes the last completed subfolder and resumes from there."
         ),
     )
+    ap.add_argument(
+        "--workers",
+        type=int,
+        default=max(1, (os.cpu_count() or 2) - 1),
+        help=(
+            "Number of sweep combinations to run in parallel (separate processes). "
+            "Each combo is fully independent, so this only matters when the YAML "
+            "defines ranges (e.g. bh_rp_au_range). "
+            "1 = original sequential behavior. Default: cpu_count - 1."
+        ),
+    )
+    ap.add_argument(
+        "--max-worker-mem-gb",
+        type=float,
+        default=2.5,
+        help=(
+            "Estimated peak RAM (GB) used by a single worker process (ephemeris + "
+            "IAS15 state + belt tracers). Used to cap --workers so total memory demand "
+            "stays under available system RAM. Default: 2.5 GB/worker."
+        ),
+    )
     args = ap.parse_args()
+
+    if args.workers > 1:
+        if psutil is not None:
+            available_gb = psutil.virtual_memory().available / (1024 ** 3)
+            # Leave headroom for the OS/other apps; only use 80% of what's free.
+            mem_cap = max(1, int((available_gb * 0.8) // args.max_worker_mem_gb))
+        else:
+            # No psutil: fall back to a conservative cap since we can't see RAM.
+            mem_cap = max(1, (os.cpu_count() or 2) // 2)
+            print(
+                "[safety] psutil not installed -- cannot check available RAM; "
+                f"capping --workers at {mem_cap} as a precaution."
+            )
+        if args.workers > mem_cap:
+            print(
+                f"[safety] Requested --workers {args.workers} exceeds the memory-safe cap "
+                f"of {mem_cap} (est. {args.max_worker_mem_gb} GB/worker). "
+                f"Reducing to {mem_cap} to avoid exhausting system memory. "
+                f"Override with --max-worker-mem-gb if your combos use less RAM than that."
+            )
+            args.workers = mem_cap
 
     with open(args.params, "r", encoding="utf-8") as f:
         params_master = yaml.safe_load(f)
@@ -1804,7 +1901,9 @@ def main():
             )
             start_index = 0
 
-    # Run simulations from start_index to end
+    # Build the list of remaining jobs (each combo is fully independent: its
+    # own params dict, its own sub_dir, no shared state between combos).
+    jobs = []
     for rp, vinf, inc, toff, Om, om, sub_name in combos[start_index:]:
         params = dict(params_master)  # shallow copy is fine
         params["bh_rp_au"] = float(rp)
@@ -1813,10 +1912,53 @@ def main():
         params["bh_tperi_offset_days"] = float(toff)
         params["bh_Omega_deg"] = float(Om)
         params["bh_omega_deg"] = float(om)
+        jobs.append((params, root_dir / sub_name, sub_name))
 
-        sub_dir = root_dir / sub_name
-        run_one(params, sub_dir, Path(args.params))
+    total = len(jobs)
+    params_src_path = Path(args.params)
+
+    if args.workers <= 1 or total <= 1:
+        # Original sequential behavior: a failure in one combo stops the run.
+        for idx, (params, sub_dir, sub_name) in enumerate(jobs, start=1):
+            print(f"[{idx}/{total}] Running: {sub_name}")
+            run_one(params, sub_dir, params_src_path)
+        return
+
+    # Parallel sweep: one process per combo, up to --workers at a time.
+    # Unlike the sequential path, a failed combo does not abort the others --
+    # all combos run to completion and failures are reported at the end.
+    print(f"[parallel] Running {total} combo(s) across up to {args.workers} worker process(es)...")
+    failures = []
+    with ProcessPoolExecutor(max_workers=args.workers, initializer=_worker_init) as executor:
+        futures = {
+            executor.submit(_run_one_worker, params, sub_dir, params_src_path, sub_name): sub_name
+            for params, sub_dir, sub_name in jobs
+        }
+        try:
+            for idx, future in enumerate(as_completed(futures), start=1):
+                sub_name, ok, err = future.result()
+                print(f"[{idx}/{total}] {'OK' if ok else 'FAILED'}: {sub_name}")
+                if not ok:
+                    failures.append((sub_name, err))
+        except KeyboardInterrupt:
+            print("\n[parallel] Interrupted; cancelling remaining combos...")
+            executor.shutdown(cancel_futures=True)
+            raise
+
+    if failures:
+        print(f"\n[parallel] {len(failures)}/{total} combo(s) failed:")
+        for sub_name, _ in failures:
+            print(f"  - {sub_name}")
+        raise RuntimeError(
+            f"{len(failures)} of {total} sweep combination(s) failed. "
+            f"See per-combo tracebacks above."
+        )
 
 
 if __name__ == "__main__":
-    main()
+    _script_start = time.time()
+    try:
+        main()
+    finally:
+        _elapsed = time.time() - _script_start
+        print(f"[timing] Total execution time: {timedelta(seconds=round(_elapsed))} ({_elapsed:.1f} s)")

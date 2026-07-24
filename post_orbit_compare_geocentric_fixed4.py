@@ -200,48 +200,6 @@ def _infer_period_from_state_relative(dx, dy, dz, dvx, dvy, dvz, mu_primary):
     a, e, _ = _elem_from_state(dx,dy,dz,dvx,dvy,dvz,mu_primary)
     return _kepler_period_days(a, mu_primary), a, e
 
-def _add_params_box(ax, params: dict, loc=(0.02, 0.98), max_lines=12):
-    """
-    Draw a small parameter text box inside the axes.
-
-    Parameters
-    ----------
-    ax : matplotlib Axes
-    params : dict
-        Key-value pairs to show.
-    loc : (x, y)
-        Upper-left corner in axes fraction coordinates.
-    max_lines : int
-        Maximum number of lines to display.
-    """
-    lines = []
-    for k, v in params.items():
-        if v is None or (isinstance(v, float) and not np.isfinite(v)):
-            continue
-        lines.append(f"{k}: {v}")
-        if len(lines) >= max_lines:
-            break
-
-    if not lines:
-        return
-
-    text = "\n".join(lines)
-
-    ax.text(
-        loc[0], loc[1],
-        text,
-        transform=ax.transAxes,
-        va="top",
-        ha="left",
-        fontsize=9,
-        bbox=dict(
-            boxstyle="round",
-            facecolor="white",
-            edgecolor="gray",
-            alpha=0.85
-        )
-    )
-
 # -----------------------
 # Baseline (no BH) sim
 # -----------------------

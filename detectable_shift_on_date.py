@@ -222,9 +222,9 @@ def main():
     out["thetaE_arcsec"] = thetaE_arcsec
     out["thetaE_mas"] = thetaE_mas
     out["centroid_shift_mas_on_date"] = delta_mas
-    print(out.columns.tolist())        
+    print(out.columns.tolist())
     row = out[out["source_id"] == "6876597890528117376"]
-    print(f"beta_arcsec= {row["beta_arcsec"]}")
+    print(f"beta_arcsec= {row['beta_arcsec']}")
 
 
     # Helpful ordering
