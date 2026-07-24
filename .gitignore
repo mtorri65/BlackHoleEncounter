@@ -12,6 +12,7 @@ env/
 *.csv
 *.xlsx
 *.log
+simulations/
 
 .DS_Store
 Thumbs.db
