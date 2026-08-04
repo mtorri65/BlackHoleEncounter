@@ -400,7 +400,7 @@ def build_sim(params):
 
 
     # Sun
-    sim.add(m=MSUN, hash="Sun")
+    sim.add(m=MSUN, name="Sun")
 
     # Planets
     order = ["mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune"]
@@ -414,7 +414,7 @@ def build_sim(params):
             vx=v[0],
             vy=v[1],
             vz=v[2],
-            hash=nm.capitalize(),  # Mercury, Venus, Earth, ...
+            name=nm.capitalize(),  # Mercury, Venus, Earth, ...
         )
 
     # Moon (simple approx in Earth's orbital plane / near it)
@@ -429,7 +429,7 @@ def build_sim(params):
         vx=earth.vx,
         vy=earth.vy + 0.00059,
         vz=earth.vz,
-        hash="Moon"
+        name="Moon"
     )
 
     # Black hole on hyperbolic approach relative to Sun
@@ -488,7 +488,7 @@ def build_sim(params):
         vx=v_bh[0],
         vy=v_bh[1],
         vz=v_bh[2],
-        hash="BH",
+        name="BH",
     )
 
     # Asteroid belt tracers (massless)

@@ -1,0 +1,82 @@
+# ===========================================================
+# Orbital Perturbation Climate Model - configuration
+# Covers the full model: Kepler + insolation, the seasonal EBM,
+# and the sweep harness.
+# Angles in degrees; distances in AU.
+# Every key is optional - omitted keys fall back to the defaults
+# in orbital_climate/config.py.
+# ===========================================================
+
+# -----------------------------------------------------------
+# STELLAR / ORBITAL FORCING
+# -----------------------------------------------------------
+S0: 1361.0              # Solar constant at 1 AU [W/m^2]
+a_au: 1.0               # Semi-major axis [AU]
+
+# Present-day Earth: ecc = 0.0167
+# Perturbed scenario (perihelion in 10%, aphelion out 10%): ecc = 0.117
+ecc: 0.0167             # Orbital eccentricity [-]
+
+obliquity_deg: 23.44    # Axial tilt epsilon [deg]
+lon_perihelion_deg: 283.0   # Longitude of perihelion lambda_p [deg]
+                            #   ~283 deg places perihelion near Jan 3
+
+# -----------------------------------------------------------
+# NUMERICS
+# -----------------------------------------------------------
+days_per_year: 365.256363   # Sidereal year [days]
+
+# -----------------------------------------------------------
+# ENERGY BALANCE MODEL (North / Budyko / Sellers)
+# -----------------------------------------------------------
+# Outgoing longwave radiation: OLR = A + B*T  (T in degC)
+olr_A: 203.3            # OLR intercept [W/m^2]
+olr_B: 2.09             # OLR slope [W/m^2/degC]
+diffusion_D: 0.58       # meridional heat-transport coefficient [W/m^2/degC]
+
+# Coalbedo (absorbed fraction) = a0 + a2*P2(x) ice-free; a_ice where T < T_ice.
+# a0 tuned so the annual-mean global temperature is ~288 K.
+coalbedo_a0: 0.676
+coalbedo_a2: -0.200
+coalbedo_ice: 0.38      # coalbedo over ice (albedo 0.62)
+T_ice_degC: -10.0       # ice-formation threshold [degC]
+
+heat_capacity: 1.05e8   # mixed-layer heat capacity C [J/m^2/degC] (tau = C/B ~ 1.6 yr)
+                        #   used only when two_surface is false
+n_lat: 180              # latitude cells (cell-centred in x = sin(phi))
+
+# -----------------------------------------------------------
+# TWO-SURFACE LAND / OCEAN MODE (North & Coakley 1979)
+# -----------------------------------------------------------
+# Each latitude carries separate land and ocean temperatures, coupled by a
+# zonal exchange term. Land responds in ~1 week, ocean in ~3 years, so this is
+# what produces continental seasonal extremes. (Simply blending the two heat
+# capacities into one number does NOT work - the mean is dominated by the ocean
+# term and changes the seasonal cycle by under 10%.)
+# Land fraction per latitude uses Earth's real zonal profile (~29% global).
+two_surface: false          # true = enable land/ocean split
+heat_capacity_land: 1.2e6   # C_land  [J/m^2/degC] (~1 m soil, tau ~ 7 days)
+heat_capacity_ocean: 2.1e8  # C_ocean [J/m^2/degC] (50 m mixed layer, tau ~ 3.2 yr)
+land_ocean_coupling: 3.5    # nu [W/m^2/degC]; calibrated to ~40 K land / ~9 K ocean at 65N
+# land_fraction_override: 0.3   # uncomment to force a uniform land fraction
+
+# Latitude tracked for the seasonal peak/trough + peak insolation (Milankovitch
+# diagnostic). 65 N by convention; may be negative for a Southern-Hemisphere one.
+diag_lat_deg: 65.0
+
+# -----------------------------------------------------------
+# TIME STEPPING
+# -----------------------------------------------------------
+dt_days: 2.0            # timestep [days] (semi-implicit -> stable at large dt)
+spinup_max_years: 200   # cap on spin-up length
+spinup_tol_degC: 1.0e-4 # year-over-year global-mean change to call equilibrium
+
+# -----------------------------------------------------------
+# SWEEP HARNESS (used by the 'sweep' subcommand)
+# Each entry is a Config field mapped to a list of values; the Cartesian
+# product is run in parallel. Uncomment / edit to sweep.
+# -----------------------------------------------------------
+# sweep:
+#   ecc:         [0.0167, 0.06, 0.117]
+#   diffusion_D: [0.4, 0.58, 0.8]
+#   lon_perihelion_deg: [103.0, 283.0]
