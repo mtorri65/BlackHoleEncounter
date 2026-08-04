@@ -87,6 +87,12 @@ class EquilibriumResult:
     diag_land_winter_min: float | None = None
     diag_ocean_summer_max: float | None = None
     diag_ocean_winter_min: float | None = None
+    # Runaway-greenhouse diagnostic (Simpson-Nakajima). When the absorbed flux
+    # exceeds what a moist atmosphere can radiate there is no equilibrium at
+    # all, so the reported temperature is meaningless rather than merely
+    # imprecise.
+    absorbed_mean: float = float("nan")   # global annual-mean absorbed flux [W/m^2]
+    runaway: bool = False
 
     @property
     def diag_seasonal_range(self) -> float:
@@ -125,6 +131,18 @@ def run_equilibrium(config: Config) -> EquilibriumResult:
     M_year = np.linspace(0.0, TWO_PI, 2000, endpoint=False)
     peak_insol = float(daily_mean_insolation(phi_diag, M_year, config).max())
 
+    # Runaway check: at equilibrium the global-mean OLR equals the global-mean
+    # absorbed flux, so comparing the latter to the Simpson-Nakajima ceiling
+    # tells us whether a moist atmosphere could have balanced at all.
+    absorbed = 0.0
+    T_steps = rec["T"]
+    for k in range(T_steps.shape[0]):
+        Q = ebm.insolation(rec["M"][k])
+        if ebm.two_surface:
+            Q = np.tile(Q, 2)
+        absorbed += float(np.mean(ebm.blend(Q * ebm.coalbedo(T_steps[k]))))
+    absorbed /= T_steps.shape[0]
+
     diags = _annual_diags(ebm, rec, i_diag)
     return EquilibriumResult(
         config=config,
@@ -143,6 +161,8 @@ def run_equilibrium(config: Config) -> EquilibriumResult:
         diag_land_winter_min=diags.get("Tdiag_land_winter_min"),
         diag_ocean_summer_max=diags.get("Tdiag_ocean_summer_max"),
         diag_ocean_winter_min=diags.get("Tdiag_ocean_winter_min"),
+        absorbed_mean=absorbed,
+        runaway=bool(absorbed > config.olr_runaway_limit),
     )
 
 

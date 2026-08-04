@@ -125,6 +125,10 @@ def _evaluate(base_dict: dict, row: dict, steps_per_year: int) -> dict:
         "diag_summer_max_degC": res.diag_summer_max,
         "diag_winter_min_degC": res.diag_winter_min,
         "diag_seasonal_range_K": res.diag_seasonal_range,
+        # Simpson-Nakajima: absorbed flux above the ceiling means no
+        # equilibrium exists at all, so T is meaningless for these runs.
+        "absorbed_mean_Wm2": res.absorbed_mean,
+        "runaway": res.runaway,
     })
     if res.diag_land_summer_max is not None:
         # Two-surface mode: land carries the Milankovitch summer signal that the
@@ -407,6 +411,9 @@ def main() -> int:
                         "instead of only reporting the final equilibrium.")
     p.add_argument("--years", type=int, default=60,
                    help="Transient length in years (only with --transient).")
+    p.add_argument("--olr-model", choices=("linear", "sellers"), default=None,
+                   help="OLR parameterisation. 'sellers' is nonlinear and stays "
+                        "physical when frozen; 'linear' is the Budyko form.")
     p.add_argument("--two-surface", action="store_true",
                    help="Enable the land/ocean two-surface model, so seasonal extremes "
                         "over land are resolved instead of being ocean-damped.")
@@ -422,6 +429,8 @@ def main() -> int:
     base = dataclasses.replace(base, n_lat=args.n_lat)
     if args.two_surface:
         base = dataclasses.replace(base, two_surface=True)
+    if args.olr_model:
+        base = dataclasses.replace(base, olr_model=args.olr_model)
 
     df, info = run_all(elements, base, workers=args.workers, max_a=args.max_a,
                        max_e=args.max_e, steps_per_year=args.steps_per_year,
@@ -475,6 +484,10 @@ def main() -> int:
                 s = ok["diag_seasonal_range_K"].dropna()
                 print(f"Seasonal range at diagnostic latitude: "
                       f"median {s.median():.1f} K, max {s.max():.1f} K")
+            if "runaway" in ok.columns:
+                nr = int(ok["runaway"].sum())
+                print(f"Runaway greenhouse (no equilibrium exists): {nr} runs "
+                      f"({100 * nr / len(ok):.0f}%) -- their temperatures are not meaningful")
             if "land_seasonal_range_K" in ok.columns:
                 sl = ok["land_seasonal_range_K"].dropna()
                 so = ok["ocean_seasonal_range_K"].dropna()

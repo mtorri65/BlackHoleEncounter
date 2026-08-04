@@ -32,6 +32,23 @@ days_per_year: 365.256363   # Sidereal year [days]
 # Outgoing longwave radiation: OLR = A + B*T  (T in degC)
 olr_A: 203.3            # OLR intercept [W/m^2]
 olr_B: 2.09             # OLR slope [W/m^2/degC]
+
+# OLR parameterisation:
+#   linear  - Budyko (1969). Calibrated near 288 K; defensible ~230-300 K.
+#             Hits OLR = 0 at 175.9 K and behaves backwards below ~230 K,
+#             where a freezing, drying atmosphere should emit MORE (toward
+#             blackbody), not less.
+#   sellers - Sellers (1969): OLR = sigma T^4 [1 - m tanh(19 T^6 1e-16)], T in K.
+#             Matches the linear form at 288 K but tends correctly to blackbody
+#             emission when frozen. Recommended when runs go far from 288 K.
+olr_model: linear
+sellers_m: 0.51         # calibrated so 'sellers' also reproduces 288 K
+
+# Simpson-Nakajima ceiling (Nakajima, Hayashi & Abe 1992): the maximum OLR a
+# moist atmosphere can sustain. Above it there is NO equilibrium -- the planet
+# runs away (Venus). Used as a diagnostic flag, never as a cap, because capping
+# would invent a stable state that does not physically exist.
+olr_runaway_limit: 300.0    # [W/m^2]
 diffusion_D: 0.58       # meridional heat-transport coefficient [W/m^2/degC]
 
 # Coalbedo (absorbed fraction) = a0 + a2*P2(x) ice-free; a_ice where T < T_ice.

@@ -62,6 +62,8 @@ def _sweep_worker(base_dict: dict, combo: dict) -> dict:
         "diag_summer_max_degC": res.diag_summer_max,
         "diag_winter_min_degC": res.diag_winter_min,
         "diag_seasonal_range_K": res.diag_seasonal_range,
+        "absorbed_mean_Wm2": res.absorbed_mean,
+        "runaway": res.runaway,
     })
     return row
 

@@ -214,6 +214,79 @@ def test_obliquity_drives_seasonal_range():
 
 
 # ---------------------------------------------------------------------------
+# Nonlinear OLR (Sellers 1969) and the runaway-greenhouse diagnostic
+# ---------------------------------------------------------------------------
+SIGMA_SB = 5.670374419e-8
+
+
+def test_olr_forms_agree_at_present_day():
+    """Sellers and the linear fit are both calibrated near 288 K."""
+    m = EBM(Config(olr_model="sellers"))
+    lin = EBM(Config(olr_model="linear"))
+    T = np.array([15.0])                      # 288.15 K
+    assert m.olr(T).item() == pytest.approx(lin.olr(T).item(), rel=0.02)
+
+
+def test_sellers_approaches_blackbody_when_frozen():
+    """The key fix: a cold, dry atmosphere must emit close to sigma T^4.
+
+    The linear form instead collapses toward zero (it reaches OLR = 0 at
+    175.9 K), which is qualitatively wrong.
+    """
+    m = EBM(Config(olr_model="sellers"))
+    lin = EBM(Config(olr_model="linear"))
+    for T_K in (180.0, 200.0, 220.0):
+        T_c = np.array([T_K - 273.15])
+        bb = SIGMA_SB * T_K ** 4
+        sellers = m.olr(T_c).item()
+        linear = lin.olr(T_c).item()
+        assert sellers > linear                    # Sellers radiates more when cold
+        assert 0.6 * bb < sellers <= bb            # and stays a sane fraction of blackbody
+    # At the coldest point the linear form is nearly dead while Sellers is not.
+    assert lin.olr(np.array([180.0 - 273.15])).item() < 20.0
+    assert m.olr(np.array([180.0 - 273.15])).item() > 40.0
+
+
+def test_linear_olr_never_exceeds_its_zero_point():
+    """Documents the linear form's hard floor: OLR = 0 at 175.9 K."""
+    lin = EBM(Config(olr_model="linear"))
+    T_zero = -Config().olr_A / Config().olr_B          # degC
+    assert lin.olr(np.array([T_zero])).item() == pytest.approx(0.0, abs=1e-9)
+    assert lin.olr(np.array([T_zero - 10.0])).item() < 0.0     # unphysical below
+
+
+def test_sellers_reproduces_288K():
+    eq = run_equilibrium(Config(olr_model="sellers", n_lat=90))
+    assert 287.0 < eq.global_mean + 273.15 < 289.5
+
+
+def test_unknown_olr_model_raises():
+    m = EBM(Config(olr_model="not_a_model"))
+    with pytest.raises(ValueError):
+        m.olr(np.array([0.0]))
+
+
+def test_runaway_flag_fires_only_when_too_hot():
+    """Earth is stable; moving it well inside the runaway limit is not."""
+    earth = run_equilibrium(Config(olr_model="sellers", n_lat=90))
+    assert not earth.runaway
+    assert earth.absorbed_mean < Config().olr_runaway_limit
+
+    hot = run_equilibrium(Config(olr_model="sellers", a_au=0.80, n_lat=90))
+    assert hot.runaway
+    assert hot.absorbed_mean > Config().olr_runaway_limit
+
+
+def test_absorbed_matches_olr_at_equilibrium():
+    """Energy balance: global-mean absorbed flux equals global-mean OLR."""
+    cfg = Config(olr_model="sellers", n_lat=90)
+    eq = run_equilibrium(cfg)
+    m = EBM(cfg)
+    olr_mean = float(np.mean(m.olr(eq.T)))
+    assert eq.absorbed_mean == pytest.approx(olr_mean, abs=2.0)
+
+
+# ---------------------------------------------------------------------------
 # Two-surface land/ocean mode
 # ---------------------------------------------------------------------------
 def test_land_fraction_matches_earth():

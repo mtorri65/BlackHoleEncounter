@@ -24,7 +24,8 @@ the REBOUND black-hole-flyby sweeps in this repository.
 7. [Corrections and negative results](#7-corrections-and-negative-results)
 8. [Bugs found and fixed](#8-bugs-found-and-fixed)
 9. [Known limitations](#9-known-limitations)
-10. [File inventory and reproduction](#10-file-inventory-and-reproduction)
+10. [Data volume and archival](#10-data-volume-and-archival)
+11. [File inventory and reproduction](#11-file-inventory-and-reproduction)
 
 ---
 
@@ -127,6 +128,10 @@ C ∂T/∂t = Q(x,t)·a(x,T) − (A + B·T) + D ∂/∂x[(1 − x²) ∂T/∂x]
 with `x = sin(latitude)`, `T` in °C, coalbedo `a = a₀ + a₂·P₂(x)` where ice-free
 and `a_ice` where `T < T_ice`.
 
+The linear OLR `A + B·T` shown here is the default. A nonlinear alternative
+(Sellers 1969) was added later once its validity range proved too narrow for
+this sweep — see §9 for the failure analysis and §6.8 for the consequences.
+
 ### 3.2 Discretisation
 
 * **Equal-area cell-centred grid in `x`.** Cells have equal area, so global
@@ -149,6 +154,20 @@ rhs   = (C/Δt)·T + Q·a(T) − A
 This is unconditionally stable for the stiff terms, so `dt_days` is an
 **accuracy** knob, not a stability limit — verified consistent from
 `dt = 1 day` to `dt = 30 days`.
+
+**Extension for nonlinear OLR.** A nonlinear `OLR(T)` would ordinarily force the
+matrix to be re-factorised every step. Instead the implicit operator *keeps* its
+linear `B·T` relaxation term and the explicit source carries `B·T − OLR(T)`:
+
+```
+rhs = (C/Δt)·T + Q·a(T) − OLR(T) + B·T
+```
+
+The `B·T` contributions **cancel exactly at convergence**, so `olr_B` becomes a
+pure numerical preconditioner while the converged state satisfies the true
+balance `D∇²T + Q·a(T) − OLR(T) = 0`. With `olr_model = "linear"` the source
+collapses to `Q·a(T) − A` and the scheme is identical to the original — which is
+why all 54 pre-existing tests passed unchanged when the option was added.
 
 ### 3.4 Calibration
 
@@ -526,6 +545,54 @@ correction it applies depends on what changed. For pure orbital-**shape**
 changes it reveals a summer signal the old model gets backwards; for large
 orbital-**size** changes it moderates an overestimate.
 
+### 6.8 Nonlinear OLR: re-running the sweep with Sellers
+
+All results above use the **linear** OLR. Re-running the full 644-run sweep with
+`olr_model: sellers` (plus two surfaces) quantifies how much the linear form's
+cold-end failure was distorting the answer.
+
+| | linear | **Sellers** |
+|---|---|---|
+| pre-flyby baseline | 288.19 K | **288.60 K** |
+| median outcome | 278.97 K | **275.61 K** |
+| coldest run | 187.8 K | **144.5 K** |
+| hottest run | 559.7 K | **403.4 K** |
+| snowball runs | 240 | **298** |
+
+**The cold band moved exactly as predicted.** For the 236 runs the linear form
+placed below 230 K, Sellers is **16.1 K colder** (median). That is the
+under-cooling bias diagnosed in §9 being removed: once a freezing atmosphere
+radiates toward blackbody instead of having its emission collapse toward zero,
+those worlds shed heat properly and settle colder. More of them cross into full
+glaciation, so the snowball count rises 240 → 298.
+
+**The hot tail contracted** from 559.7 K to 403.4 K, because Sellers emits far
+more at high temperature than a linear extrapolation does.
+
+**Runaway detection.** 102 runs (16%) exceed the Simpson–Nakajima ceiling. For
+those the linear model had been reporting temperatures up to 559.7 K for planets
+that would in reality have lost their oceans entirely. They are now flagged
+rather than silently quoted.
+
+**Net effect on validity.** Under the linear form only ~35% of runs sat in a
+defensible range. With Sellers the cold population (44% of runs, 176–230 K) is
+physically meaningful, and the honestly-unmodellable remainder is the 16%
+runaway set:
+
+| regime under Sellers | runs | share |
+|---|---|---|
+| cold, now physical (< 230 K) | 298 | 46% |
+| defensible (230–300 K) | 158 | 25% |
+| stretched (300–320 K) | 96 | 15% |
+| **runaway — no equilibrium exists** | **92–102** | **~16%** |
+
+The glacial-inception population also grows: **370 runs (57%)** show >4 K of
+high-latitude summer cooling over land, against 47% under the linear form.
+
+Transient behaviour is largely unchanged in character — median 16 years to
+equilibrium (vs 15), peak hemispheric asymmetry 5.39 K decaying to 0.16 K, and
+**temperature overshoot still exactly zero in every run**.
+
 ---
 
 ## 7. Corrections and negative results
@@ -560,6 +627,7 @@ Recorded deliberately — several initial claims did not survive testing.
 | Bug | Where | Consequence |
 |---|---|---|
 | Regex assumed XML attribute order (`Id` before `Target`); this writer emits the reverse | `extract_earth_elements.py` | Sheet lookup returned nothing; now parses XML properly |
+| Positional cell parsing assumed a uniform 12 numeric columns; the BH sheet has 10 (no `a_tidal`) | `convert_orbits_to_parquet.py` | Would have silently shifted every value; caught by the time-column integrity check, now addressed by column letter |
 | Double-blend: `ice_line_lat` re-blended an already-blended state | `ebm.py` | Shape error in two-surface mode; `blend()` made idempotent |
 | `--limit` truncated the dataframe *before* statistics were computed | `climate_from_simulations.py` | Reported "654 outside validity band" when only 8 runs were requested |
 | `ndarray.ptp()` removed in NumPy 2 | test suite | Test error; switched to `np.ptp()` |
@@ -571,10 +639,36 @@ Recorded deliberately — several initial claims did not survive testing.
 
 ## 9. Known limitations
 
-1. **Linear OLR.** `A + B·T` is calibrated near 288 K. Only **33%** of runs land
-   in the defensible 250–300 K band. Outside it, results are **ordinal, not
-   quantitative** — at the 559.7 K extreme the linearisation implies ~800 W/m²
-   outgoing where blackbody physics demands ~5500 W/m².
+1. **OLR parameterisation.** The default linear form `A + B·T` (Budyko 1969) is
+   calibrated near 288 K and fails differently at each end:
+
+   * **Cold end (qualitative failure).** It reaches `OLR = 0` at **175.9 K** and
+     goes negative below. Between ~176 K and ~230 K it behaves *backwards*: a
+     freezing, drying atmosphere should emit *more* (toward blackbody), but the
+     linear form drives emission toward zero. It therefore under-cools, and
+     equilibria in this range are **too warm**.
+   * **Hot end (missing phase transition).** Real moist atmospheres cannot
+     exceed the **Simpson–Nakajima ceiling** (~300 W/m²; Nakajima, Hayashi & Abe
+     1992) — beyond it no equilibrium exists and the planet runs away. The
+     linear form has no ceiling and crosses that threshold at ~319 K, i.e.
+     `a < 0.876 AU` on a circular orbit.
+
+   Defensible range: roughly **230–300 K**. Across the sweep that is only
+   **35%** of runs; 37% sit in the severe-cold regime and **16% (102 runs) are
+   in the runaway regime**, where the model reports temperatures for worlds that
+   would have lost their oceans entirely.
+
+   **Both failures are now addressed** (see MANUAL §10): `olr_model: sellers`
+   selects the Sellers (1969) nonlinear form, which matches the linear one at
+   288 K to 0.3% but tends correctly to blackbody emission when frozen; and
+   every equilibrium now reports `absorbed_mean` plus a `runaway` boolean
+   against the Simpson–Nakajima ceiling. The runaway condition is **flagged, not
+   capped** — capping would manufacture a stable state that does not exist.
+   Sellers does not fix the hot end (above ~350 K it degenerates to a constant
+   emissivity `0.5·σT⁴`), which is precisely why the flag is needed alongside it.
+
+   Results quoted elsewhere in this report were computed with the **linear**
+   form and retain the limitation as stated.
 2. **Hard ice-albedo step** at `T_ice`. The *existence* of the bifurcation is
    robust EBM physics; its exact location is parameterisation-dependent.
 3. **Fixed obliquity within a run** — no precession or obliquity cycling. The
@@ -591,7 +685,62 @@ Recorded deliberately — several initial claims did not survive testing.
 
 ---
 
-## 10. File inventory and reproduction
+## 10. Data volume and archival
+
+The engine writes one `*__orbits__*.xlsx` per run at ~220 MB, making the 672-run
+sweep **150.7 GB**. Almost all of that is format overhead, not information:
+every number is stored as XML text, five `*_str` columns duplicate numeric ones
+as text, and four more columns are derivable from the state vector.
+
+[`convert_orbits_to_parquet.py`](convert_orbits_to_parquet.py) reduces this to
+**26.4 GB — a 5.71× reduction** — with all 672 runs verified and zero failures.
+
+**What is kept:** `t_days, x, y, z, vx, vy, vz, disp_helio_au`. Dropped as
+recoverable: `r_helio` (= |r − r_sun|), `a_tidal` (computable from the BH state),
+the `*_m`/`*_m_s2` unit conversions, and the five `*_str` duplicates.
+`disp_helio_au` is **deliberately kept** — it is the displacement against the
+BH-free baseline integration and cannot be reconstructed from this file alone.
+
+**Reading strategy.** `openpyxl` needs ~13 s per sheet (29 h for the sweep).
+Instead the sheet XML is stream-decompressed straight from the xlsx zip and
+parsed with one regex: ~0.6 s per sheet, **21× faster**.
+
+**Precision.** float32 was measured, not assumed: re-deriving Earth's orbital
+elements from float32 state vectors differs from float64 by ~10⁻⁶ AU and
+~10⁻⁶ degrees — negligible beside the ~4.3° λ_p precession uncertainty already
+accepted in §5.4.
+
+**Three layers of verification**, all required before a run is reported `ok`:
+
+1. **Structural** — row numbers contiguous, and the time column must equal
+   exactly `0..N−1`. Any cell misalignment breaks this immediately.
+2. **Round-trip** — every file is read back and compared to what was written,
+   including NaN-pattern agreement.
+3. **Scientific** — orbital elements re-derived from the Parquet reproduce the
+   originals to ~10⁻⁶ AU / ~10⁻³ degrees.
+
+Layer 1 caught a real bug (see §8): the first implementation parsed cells
+positionally, assuming a uniform 12 numeric columns per sheet. The **BH sheet
+has only 10** — it omits `a_tidal`, since the black hole exerts no tidal
+acceleration on itself. Positional parsing would have shifted every subsequent
+value and written plausible-looking garbage. The reader now addresses cells by
+spreadsheet column letter.
+
+**Archival.** The scientific content actually drawn on — per-run `input.yaml`,
+`planets_run_deltas.csv`, and the derived analysis CSVs — is only a few MB and
+belongs in git. The trajectories are bulk intermediate data: compress, push to
+object storage or a citable archive (Zenodo issues a DOI), and keep the local
+copy cloud-only. They are also fully **regenerable** from the recipe
+(`input.yaml` + engine git SHA + `de440s.bsp`), so storing them at all is a
+compute-vs-storage tradeoff rather than a necessity.
+
+**Prevention.** `output_interval_days: 1` is what produces 220 MB per run. A
+future sweep will recreate the problem unless the cadence is coarsened away from
+the encounter or the engine writes Parquet directly.
+
+---
+
+## 11. File inventory and reproduction
 
 ### Package — [`orbital_climate/`](orbital_climate/)
 
@@ -604,7 +753,7 @@ Recorded deliberately — several initial claims did not survive testing.
 | `sweep.py` | Parallel Cartesian-product sweep → parquet/CSV |
 | `config.py` | `Config` dataclass + YAML loading |
 | `cli.py` | `insolation` / `ebm` / `sweep` subcommands |
-| `tests/` | **54 tests** |
+| `tests/` | **61 tests** |
 | `MANUAL.md` | Usage manual |
 
 ### Bridge scripts — repository root
@@ -614,6 +763,7 @@ Recorded deliberately — several initial claims did not survive testing.
 | `extract_earth_elements.py` | Recovers `a, e, ε, λ_p` per run from the orbits workbooks (30× faster than openpyxl) |
 | `climate_from_simulations.py` | Runs the EBM on every simulation; equilibrium or transient; parallel |
 | `rank_run_impact.py` | Ranks runs by orbital disruption (energy/eccentricity/perihelion metric) |
+| `convert_orbits_to_parquet.py` | Converts the orbit workbooks to Parquet (5.7x smaller), with structural, round-trip and scientific verification |
 | `input_climate.yaml` | Shared configuration |
 
 ### Reproduction
@@ -623,7 +773,7 @@ Recorded deliberately — several initial claims did not survive testing.
 python -m pip install numpy scipy pandas matplotlib pyyaml pyarrow pytest
 
 # 1. Validate the physics
-python -m pytest orbital_climate/tests/ -v            # 54 tests
+python -m pytest orbital_climate/tests/ -v            # 61 tests
 
 # 2. Rank runs by orbital disruption
 python rank_run_impact.py simulations/<STAMP> --plot impact.png
@@ -632,12 +782,20 @@ python rank_run_impact.py simulations/<STAMP> --plot impact.png
 python extract_earth_elements.py simulations/<STAMP> --workers 5
 
 # 4. Climate across the sweep — equilibrium
+#    --olr-model sellers keeps frozen states physical; omit it for the
+#    original linear (Budyko) form.
 python climate_from_simulations.py simulations/<STAMP> \
-    --config input_climate.yaml --two-surface --workers 5 --plot climate.png
+    --config input_climate.yaml --olr-model sellers --two-surface \
+    --workers 5 --plot climate.png
 
 # 5. Climate across the sweep — transient
 python climate_from_simulations.py simulations/<STAMP> \
-    --config input_climate.yaml --two-surface --transient --years 40 --workers 5
+    --config input_climate.yaml --olr-model sellers --two-surface \
+    --transient --years 40 --workers 5
+
+# 6. (Storage) Compress the orbit workbooks ~5.7x, with verification.
+#    Source files are never deleted; remove them yourself once backed up.
+python convert_orbits_to_parquet.py simulations/<STAMP> --workers 5
 ```
 
 ### Outputs
@@ -672,3 +830,10 @@ Every quantitative claim in this report, and where it was checked:
 | Land/ocean calibration | 65 °N seasonal ranges | 40.1 K / 9.1 K vs ~40 / ~8–9 |
 | Two surfaces preserve energetics | global mean shift | 288.14 → 288.07 K |
 | Equilibrium robust to initial state | 12 runs at the bifurcation | zero flips |
+| Linear OLR hard floor | solve `A + B·T = 0` | 175.9 K; negative below |
+| Sellers matches linear at present day | point comparison at 288 K | 235.1 vs 234.3 W/m² (0.3%) |
+| Sellers physical when frozen | Sellers/blackbody at 180–220 K | 0.89–0.97 (linear collapses to 0.14) |
+| Sellers reproduces 288 K | `sellers_m` scan | 288.04 K at m = 0.51 |
+| Runaway flag fires correctly | Earth moved inward | triggers between a = 0.90 and 0.85 AU (analytic 0.876) |
+| Parquet preserves the science | elements re-derived from converted files | ~10⁻⁶ AU, ~10⁻³ deg |
+| Parquet conversion integrity | 672 runs, 3 verification layers | 672 ok, 0 failed |

@@ -75,6 +75,9 @@ ways, in increasing precedence:
 |---|---|---|
 | `olr_A` | 203.3 | Outgoing-longwave intercept A [W/m²], `OLR = A + B·T` (T in °C) |
 | `olr_B` | 2.09 | Outgoing-longwave slope B [W/m²/°C] |
+| `olr_model` | `"linear"` | `"linear"` (Budyko) or `"sellers"` (nonlinear) — see §10 |
+| `sellers_m` | 0.51 | Sellers attenuation parameter, calibrated to 288 K |
+| `olr_runaway_limit` | 300.0 | Simpson–Nakajima ceiling [W/m²]; sets the `runaway` flag |
 | `diffusion_D` | 0.58 | Meridional heat-transport coefficient [W/m²/°C] |
 | `coalbedo_a0` | 0.676 | Mean ice-free coalbedo (tuned to 288 K) |
 | `coalbedo_a2` | -0.200 | Latitude structure of coalbedo (× P₂(x)) |
@@ -377,4 +380,78 @@ and ~9 K over ocean, matching observed continental vs. maritime seasonality.
 ```bash
 python -m orbital_climate.cli ebm --config input_climate.yaml   # with two_surface: true
 ```
+```
+
+---
+
+## 10. OLR parameterisation and the runaway greenhouse
+
+### The problem with the linear form
+
+The default `OLR = A + B·T` (Budyko 1969) is an empirical fit calibrated near
+288 K. It fails at both ends, and differently at each:
+
+* **Cold end — qualitatively wrong.** It reaches `OLR = 0` at **175.9 K** and
+  goes negative below that. Worse, between ~176 K and ~230 K it behaves
+  *backwards*: as a planet freezes its atmosphere dries out, the greenhouse
+  effect weakens, and OLR should rise toward blackbody — but the linear form
+  drives it toward zero. Because it under-estimates emission, equilibria in this
+  range come out **too warm**.
+* **Hot end — a missing phase transition.** Real moist atmospheres cannot emit
+  more than the **Simpson–Nakajima limit** (~280–310 W/m²; Nakajima, Hayashi &
+  Abe 1992). Beyond it no equilibrium exists and the planet enters a runaway
+  greenhouse. The linear form has no ceiling and reports a tidy equilibrium
+  where physics says there is none — it crosses that threshold at ~319 K,
+  corresponding to `a < 0.876 AU` on a circular orbit.
+
+Defensible range for the linear form: roughly **230–300 K**.
+
+### The Sellers alternative
+
+`olr_model: sellers` selects Sellers (1969) — the other half of
+"Budyko–Sellers", from the same year and the same class of model:
+
+```
+OLR = σ T⁴ [ 1 − m · tanh(19 T⁶ × 10⁻¹⁶) ]        (T in Kelvin)
+```
+
+| T [K] | linear | Sellers | blackbody | Sellers/BB |
+|---|---|---|---|---|
+| 180 | 8.6 | **57.6** | 59.5 | 0.97 |
+| 200 | 50.4 | **85.2** | 90.7 | 0.94 |
+| **288** | **234.3** | **235.1** | 390.1 | 0.60 |
+| 320 | 301.2 | 307.2 | 594.6 | 0.52 |
+
+It agrees with the linear form at present-day Earth to 0.3% but approaches
+blackbody emission when frozen — the physically correct limit. `sellers_m` is
+set to **0.51** so the full EBM (including the ice-albedo feedback) still
+equilibrates at 288 K; the textbook 0.5 gives 285.7 K.
+
+Sellers does **not** fix the hot end: above ~350 K it degenerates to a constant
+emissivity `0.5·σT⁴` and still has no runaway ceiling.
+
+### Numerics
+
+The semi-implicit solver needs a constant, once-factorised matrix, so the
+nonlinear OLR is handled by an IMEX splitting: the implicit operator keeps a
+linear `B·T` relaxation term and the explicit source carries
+`B·T − OLR(T)`. The `B·T` contributions cancel exactly at convergence, so
+`olr_B` acts purely as a numerical preconditioner and the converged state
+satisfies the true balance. With `olr_model: linear` the scheme reduces
+identically to the original one.
+
+### The runaway flag
+
+Every equilibrium reports `absorbed_mean` (global annual-mean absorbed flux) and
+a boolean `runaway`, set when that exceeds `olr_runaway_limit`. At equilibrium
+global-mean OLR equals global-mean absorbed, so this is a direct test of whether
+a moist atmosphere could have balanced at all.
+
+It is deliberately a **flag, not a cap**: capping OLR would manufacture a stable
+state that does not physically exist. For flagged runs the reported temperature
+is not merely imprecise — there is no equilibrium to report.
+
+```bash
+python climate_from_simulations.py simulations/<STAMP> \
+    --config input_climate.yaml --olr-model sellers --two-surface --workers 5
 ```

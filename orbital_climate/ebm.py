@@ -39,6 +39,8 @@ from .insolation import daily_mean_insolation, annual_mean_insolation
 
 TWO_PI = 2.0 * np.pi
 SECONDS_PER_DAY = 86400.0
+SIGMA_SB = 5.670374419e-8      # Stefan-Boltzmann constant [W m^-2 K^-4]
+KELVIN = 273.15
 
 # Earth's zonal land fraction, by 10-degree band centre (south -> north).
 # Antarctica dominates the far south; the northern mid-latitudes are the most
@@ -186,6 +188,28 @@ class EBM:
         T_l, T_o = self.split(T)
         return self.land_frac * T_l + (1.0 - self.land_frac) * T_o
 
+    def olr(self, T: np.ndarray) -> np.ndarray:
+        """Outgoing longwave radiation [W m^-2] for temperature ``T`` [degC].
+
+        ``linear``  -- Budyko (1969):  A + B*T
+        ``sellers`` -- Sellers (1969): sigma T_K^4 [1 - m tanh(19 T_K^6 1e-16)]
+
+        The Sellers form matches the linear one at present-day Earth (235.1 vs
+        234.3 W/m^2 at 288 K) but, unlike it, tends to blackbody emission as the
+        planet freezes and its atmosphere dries -- the physically correct limit.
+        """
+        model = str(self.cfg.olr_model).lower()
+        if model == "linear":
+            return self.cfg.olr_A + self.cfg.olr_B * np.asarray(T, dtype=float)
+        if model == "sellers":
+            # Clamp to a small positive absolute temperature: the explicit
+            # source can transiently probe unphysical values during spin-up.
+            T_K = np.maximum(np.asarray(T, dtype=float) + KELVIN, 1.0)
+            return SIGMA_SB * T_K ** 4 * (
+                1.0 - self.cfg.sellers_m * np.tanh(19.0 * T_K ** 6 * 1e-16))
+        raise ValueError(f"Unknown olr_model {self.cfg.olr_model!r}; "
+                         "expected 'linear' or 'sellers'.")
+
     def insolation(self, M: float) -> np.ndarray:
         """Daily-mean insolation Q(x) at orbital mean anomaly ``M`` [rad]."""
         return daily_mean_insolation(self.phi, float(M), self.cfg)
@@ -229,11 +253,23 @@ class EBM:
     # Time integration
     # ------------------------------------------------------------------
     def step(self, T: np.ndarray, M: float) -> np.ndarray:
-        """Advance temperature one timestep with the semi-implicit scheme."""
+        """Advance temperature one timestep with the semi-implicit scheme.
+
+        The implicit operator carries a linear ``B*T`` relaxation term so it can
+        stay constant and be factorised once. Any nonlinear OLR is handled by
+        adding ``B*T - OLR(T)`` to the explicit source: the ``B*T`` contributions
+        cancel exactly at convergence, so ``olr_B`` acts purely as a numerical
+        preconditioner and the converged state satisfies the true balance
+
+            D d/dx[(1-x^2) dT/dx] + Q a(T) - OLR(T) = 0
+
+        With ``olr_model = "linear"`` this reduces identically to the original
+        scheme (the source collapses to ``Q a(T) - A``).
+        """
         Q = self.insolation(M)
         if self.two_surface:
             Q = np.tile(Q, 2)          # both surfaces see the same insolation
-        source = Q * self.coalbedo(T) - self.cfg.olr_A     # explicit source [W/m^2]
+        source = Q * self.coalbedo(T) - self.olr(T) + self.cfg.olr_B * T
         rhs = (self.C / self._dt_s) * T + source
         return lu_solve(self._lu, rhs)
 

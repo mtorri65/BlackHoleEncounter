@@ -49,6 +49,28 @@ class Config:
     # Outgoing longwave radiation linearisation OLR = A + B*T, with T in degC.
     olr_A: float = 203.3            # OLR intercept [W m^-2]
     olr_B: float = 2.09             # OLR slope [W m^-2 degC^-1]
+
+    # --- OLR parameterisation ---
+    # "linear"  : Budyko (1969) form OLR = A + B*T. Calibrated near 288 K; it
+    #             reaches OLR = 0 at 175.9 K and behaves qualitatively wrongly
+    #             below ~230 K, where a drying atmosphere should push OLR *up*
+    #             toward blackbody, not down toward zero.
+    # "sellers" : Sellers (1969) OLR = sigma T^4 [1 - m tanh(19 T^6 1e-16)],
+    #             T in Kelvin. Agrees with the linear form at 288 K to 0.3% but
+    #             correctly approaches blackbody emission as the planet freezes.
+    olr_model: str = "linear"
+    # Atmospheric attenuation parameter. 0.51 is calibrated so the Sellers form
+    # reproduces the same 288 K present-day equilibrium as the tuned linear one
+    # (the raw Sellers value 0.5 gives 285.7 K once the ice-albedo feedback and
+    # the full latitude profile are accounted for).
+    sellers_m: float = 0.51
+
+    # Simpson-Nakajima ceiling: the maximum OLR a moist atmosphere can sustain
+    # (Nakajima, Hayashi & Abe 1992). If the absorbed flux exceeds it there is
+    # *no* equilibrium -- the planet enters a runaway greenhouse. This is used as
+    # a diagnostic flag, not as a cap, because capping would invent a stable
+    # state that physically does not exist.
+    olr_runaway_limit: float = 300.0    # [W m^-2]
     # Meridional heat transport coefficient in D * d/dx[(1-x^2) dT/dx].
     diffusion_D: float = 0.58       # [W m^-2 degC^-1]
     # Coalbedo (absorbed fraction) = a0 + a2*P2(x) where ice-free; a_ice where
