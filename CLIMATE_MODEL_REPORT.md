@@ -283,10 +283,10 @@ Target: ~40 K over land, ~8–9 K over ocean at 65 °N. **ν = 3.5** matches bot
 
 | At 65 °N, present-day Earth | single surface | two surface |
 |---|---|---|
-| seasonal range (blended) | 11.5 K | **34.9 K** |
+| seasonal range (blended) | 11.5 K | **23.0 K** |
 | seasonal range over land | — | **40.1 K** |
 | seasonal range over ocean | — | **9.1 K** |
-| global mean T | 288.14 K | **288.07 K** |
+| global mean T | 288.14 K | **288.42 K** |
 
 The global mean is **essentially unchanged** — equilibrium is set by the
 radiation balance, not by heat capacity. Only the seasonal cycle changes, which
@@ -604,7 +604,7 @@ Recorded deliberately — several initial claims did not survive testing.
 | Claim | Reality |
 |---|---|
 | "Obliquity change is a first-order effect" — based on one sampled run showing 23° → 74° | Full distribution: median change ~0; only **3%** of runs shift >10°, 0.3% >30°. The 74° case is an outlier. |
-| "Adding two surfaces will require re-tuning `coalbedo_a0` and all results will shift" | **Not needed.** Global mean moved 288.14 → 288.07 K. Equilibrium is set by radiation balance, not heat capacity. |
+| "Adding two surfaces will require re-tuning `coalbedo_a0` and all results will shift" | **Not needed.** Global mean moved 288.14 → 288.42 K. Equilibrium is set by radiation balance, not heat capacity. |
 | "The transient may land in a different attractor than `run_equilibrium` (which starts from a uniform 15 °C guess rather than Earth's real profile)" | **Tested 12 runs straddling the bifurcation: zero flips.** Equilibrium results are robust to initial conditions. |
 | "The old model missed the glacial-inception signal" | **Regime-dependent.** True for pure eccentricity injection; across this sweep the single-surface model actually *over*-predicts summer cooling (63% vs 47%). |
 | A hardcoded Kepler test constant of 1.1934205 | Recomputed independently: **1.1853242**. The original would have validated a broken solver. |
@@ -828,7 +828,7 @@ Every quantitative claim in this report, and where it was checked:
 | Bound/unbound classification | vs independent deltas CSVs | 662/672 both ✓ |
 | Land fraction profile | area-weighted global mean | 0.290 (Earth 0.29) |
 | Land/ocean calibration | 65 °N seasonal ranges | 40.1 K / 9.1 K vs ~40 / ~8–9 |
-| Two surfaces preserve energetics | global mean shift | 288.14 → 288.07 K |
+| Two surfaces preserve energetics | global mean shift | 288.14 → 288.42 K |
 | Equilibrium robust to initial state | 12 runs at the bifurcation | zero flips |
 | Linear OLR hard floor | solve `A + B·T = 0` | 175.9 K; negative below |
 | Sellers matches linear at present day | point comparison at 288 K | 235.1 vs 234.3 W/m² (0.3%) |

@@ -360,10 +360,10 @@ northern mid-latitudes), integrating to ~29% global land cover. Override it with
 
 | | single surface | two surface |
 |---|---|---|
-| seasonal range (blended) | 11.5 K | **34.9 K** |
+| seasonal range (blended) | 11.5 K | **23.0 K** |
 | seasonal range over land | — | **~40 K** |
 | seasonal range over ocean | — | **~9 K** |
-| global mean T | 288.14 K | 288.07 K |
+| global mean T | 288.14 K | 288.42 K |
 
 The global mean is essentially unchanged — equilibrium is set by the radiation
 balance, not by heat capacity — so **no re-tuning of `coalbedo_a0` is needed**.
