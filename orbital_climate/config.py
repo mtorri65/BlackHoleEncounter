@@ -113,6 +113,12 @@ class Config:
     co2_latent_heat: float = 5.9e5        # sublimation enthalpy [J/kg]
     surface_gravity: float = 3.71         # [m/s^2]; Mars
     co2_frost_albedo: float = 0.62        # fresh CO2 frost; coalbedo = 1 - this
+    # Fraction of the inventory that must remain airborne for the model to be
+    # meaningful. Below it the atmosphere has essentially all condensed: the
+    # frost point degenerates (it tends to ~76 K as p -> 0), so temperatures and
+    # pressures reported from that state describe nothing. Detected and flagged
+    # rather than clamped, for the same reason as the Simpson-Nakajima runaway.
+    co2_collapse_threshold: float = 0.01
     n_lat: int = 180                # number of latitude cells (cell-centred in x=sin(phi))
 
     # Latitude at which the seasonal peak/trough temperature and peak insolation

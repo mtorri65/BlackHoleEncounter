@@ -204,6 +204,41 @@ def test_pressure_falls_as_frost_accumulates():
     assert p0 == pytest.approx(m.inventory * m.gravity, rel=1e-12)
 
 
+def test_collapse_is_detected_not_clamped():
+    """A frozen-out atmosphere must be flagged, not reported as a temperature.
+
+    As p -> 0 the frost-point inversion degenerates toward ~76 K rather than
+    diverging, so the model would otherwise keep condensing against a threshold
+    that has lost its meaning -- and report the result with a straight face.
+    """
+    m = MarsEBM(mars_config())
+    assert not m.is_collapsed(np.zeros(m.n))              # full atmosphere
+    assert not m.is_collapsed(np.full(m.n, 100.0))        # half condensed
+    assert m.is_collapsed(np.full(m.n, m.inventory))      # fully condensed
+    assert m.airborne_fraction(np.zeros(m.n)) == pytest.approx(1.0)
+    assert m.airborne_fraction(np.full(m.n, m.inventory)) == pytest.approx(0.0)
+
+    # The degeneracy the flag exists to catch: the frost point does not diverge
+    # as the atmosphere vanishes, it converges to a finite, meaningless value.
+    assert float(co2_frost_point_K(1e-6)) < 100.0
+
+
+def test_run_year_reports_collapse_fraction():
+    """Present-day Mars never freezes out, and the diagnostic says so."""
+    m = MarsEBM(mars_config())
+    T, frost, M, _ = m.spin_up_co2()
+    T, frost, M, rec = m.run_year_co2(T, frost, M0=M)
+    assert rec["collapsed_fraction"] == 0.0
+    assert not rec["collapsed"].any()
+
+    # A thin inventory does collapse, and is flagged rather than silently
+    # producing numbers.
+    thin = MarsEBM(mars_config(co2_inventory_kg_m2=8.0))
+    T2, f2, M2, _ = thin.spin_up_co2()
+    T2, f2, M2, rec2 = thin.run_year_co2(T2, f2, M0=M2)
+    assert rec2["collapsed_fraction"] > 0.0
+
+
 def test_two_surface_is_rejected():
     """Mars has no ocean; the land/ocean split must not silently do nothing."""
     with pytest.raises(NotImplementedError):

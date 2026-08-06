@@ -110,6 +110,29 @@ class MarsEBM(EBM):
         return float(np.mean(m_frost)) + max(
             self.inventory - float(np.mean(m_frost)), 0.0)
 
+    def airborne_fraction(self, m_frost: np.ndarray) -> float:
+        """Fraction of the CO2 inventory still in the atmosphere."""
+        if self.inventory <= 0:
+            return 0.0
+        return max(self.inventory - float(np.mean(m_frost)), 0.0) / self.inventory
+
+    def is_collapsed(self, m_frost: np.ndarray) -> bool:
+        """Has the atmosphere essentially all condensed onto the surface?
+
+        Beyond this point the model reports numbers it is not entitled to. The
+        frost point is obtained by inverting the vapour-pressure curve, and as
+        ``p -> 0`` that inversion degenerates -- it tends toward ~76 K rather
+        than diverging, so the model will happily keep condensing against a
+        frost point that has lost its meaning.
+
+        This is flagged rather than clamped, on the same reasoning as the
+        Simpson-Nakajima runaway in the Earth model: a cap would manufacture a
+        state that does not physically exist, whereas a flag says the model has
+        left its domain and the honest output is "the atmosphere freezes out"
+        rather than a temperature.
+        """
+        return self.airborne_fraction(m_frost) < self.cfg.co2_collapse_threshold
+
     # ------------------------------------------------------------------
     # Physics overrides
     # ------------------------------------------------------------------
@@ -201,11 +224,19 @@ class MarsEBM(EBM):
         rec_m = np.empty((n_steps, self.n))
         rec_p = np.empty(n_steps)
         rec_day = np.empty(n_steps)
+        rec_collapsed = np.zeros(n_steps, dtype=bool)
         for k in range(n_steps):
             T, m = self.step_co2(T, m, M)
             M += dM
             rec_T[k], rec_m[k] = T, m
             rec_p[k] = self.surface_pressure(m)
+            rec_collapsed[k] = self.is_collapsed(m)
             rec_day[k] = (M - M0) / (2.0 * np.pi) * self.cfg.days_per_year
         return T, m, M, {"T": rec_T, "m_frost": rec_m,
-                         "pressure_Pa": rec_p, "day": rec_day}
+                         "pressure_Pa": rec_p, "day": rec_day,
+                         "collapsed": rec_collapsed,
+                         # Fraction of the year spent with the atmosphere frozen
+                         # out. Any value above zero means the run's reported
+                         # temperatures and pressures are outside the model's
+                         # domain for at least part of the year.
+                         "collapsed_fraction": float(np.mean(rec_collapsed))}

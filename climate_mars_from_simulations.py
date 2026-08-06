@@ -84,9 +84,16 @@ def _evaluate(base_dict: dict, row: dict) -> dict:
             np.mean(rec["T"][:, i_eq] + KELVIN > 273.15)),
         "spinup_years": int(info["years"]),
         "S_mean_Wm2": cfg.S0 / (4.0 * cfg.a_au ** 2 * np.sqrt(1.0 - cfg.ecc ** 2)),
+        # Atmospheric collapse: the fraction of the year spent with the CO2
+        # essentially all condensed. Above zero, the reported temperatures and
+        # pressures are outside the model's domain for part of the year -- the
+        # frost point degenerates as p -> 0, so those values describe nothing.
+        "collapsed_fraction": float(rec["collapsed_fraction"]),
+        "min_airborne_fraction": float(
+            1.0 - rec["m_frost"].mean(axis=1).max() / cfg.co2_inventory_kg_m2),
     })
-    # A permanently collapsed atmosphere is a qualitatively different world.
-    out["atmosphere_collapsed"] = bool(out["pressure_mean_Pa"] < 0.05 * base.co2_inventory_kg_m2 * base.surface_gravity)
+    out["atmosphere_collapsed"] = bool(out["collapsed_fraction"] > 0.0)
+    out["permanently_collapsed"] = bool(out["collapsed_fraction"] > 0.99)
     return out
 
 
@@ -160,7 +167,14 @@ def main() -> int:
         print(f"\n  runs where the equator exceeds 273 K at some point: {warm} "
               f"({100 * warm / len(ok):.0f}%)")
         if "atmosphere_collapsed" in ok.columns:
-            print(f"  runs with a collapsed atmosphere: {int(ok['atmosphere_collapsed'].sum())}")
+            coll = int(ok["atmosphere_collapsed"].sum())
+            perm = int(ok["permanently_collapsed"].sum())
+            print(f"\n  ATMOSPHERE FREEZES OUT (model outside its domain):")
+            print(f"    at some point in the year : {coll} ({100 * coll / len(ok):.0f}%)")
+            print(f"    for the whole year        : {perm} ({100 * perm / len(ok):.0f}%)")
+            if coll:
+                print("    -> temperatures and pressures for these runs are not "
+                      "meaningful; the honest result is 'the atmosphere freezes out'.")
     n_err = int(df["error"].notna().sum()) if "error" in df.columns else 0
     if n_err:
         print(f"  errors: {n_err}")
