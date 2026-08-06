@@ -78,6 +78,7 @@ ways, in increasing precedence:
 | `olr_model` | `"linear"` | `"linear"` (Budyko) or `"sellers"` (nonlinear) — see §10 |
 | `sellers_m` | 0.51 | Sellers attenuation parameter, calibrated to 288 K |
 | `olr_runaway_limit` | 300.0 | Simpson–Nakajima ceiling [W/m²]; sets the `runaway` flag |
+| `olr_emissivity` | 1.0 | Emissivity for `olr_model: "graybody"` — see §11 |
 | `diffusion_D` | 0.58 | Meridional heat-transport coefficient [W/m²/°C] |
 | `coalbedo_a0` | 0.676 | Mean ice-free coalbedo (tuned to 288 K) |
 | `coalbedo_a2` | -0.200 | Latitude structure of coalbedo (× P₂(x)) |
@@ -96,6 +97,17 @@ ways, in increasing precedence:
 | `heat_capacity_ocean` | 2.1e8 | C_ocean [J/m²/°C] (50 m mixed layer, τ ≈ 3.2 yr) |
 | `land_ocean_coupling` | 3.5 | ν [W/m²/°C] zonal land↔ocean exchange |
 | `land_fraction_override` | `null` | Force a uniform land fraction instead of Earth's zonal profile |
+
+**Condensing-CO₂ atmosphere (Mars)** — see §11
+
+| Field | Default | Meaning |
+|---|---|---|
+| `co2_cycle` | `false` | Enable the condensing atmosphere (use `MarsEBM`) |
+| `co2_inventory_kg_m2` | 200.0 | Total CO₂, atmosphere + caps [kg/m²] |
+| `co2_latent_heat` | 5.9e5 | Sublimation enthalpy [J/kg] |
+| `surface_gravity` | 3.71 | [m/s²] (Mars) |
+| `co2_frost_albedo` | 0.62 | Fresh CO₂ frost; coalbedo = 1 − this |
+| `co2_collapse_threshold` | 0.01 | Airborne fraction below which the atmosphere counts as frozen out |
 
 **Time stepping**
 
@@ -455,3 +467,77 @@ is not merely imprecise — there is no equilibrium to report.
 python climate_from_simulations.py simulations/<STAMP> \
     --config input_climate.yaml --olr-model sellers --two-surface --workers 5
 ```
+
+
+---
+
+## 11. Mars: a condensing atmosphere
+
+`orbital_climate.mars.MarsEBM` models a planet whose **atmosphere itself
+condenses**. It reuses the whole physics core — Kepler, insolation, grid,
+diffusion, IMEX stepper — and changes only the parameterisations, plus one piece
+of new physics.
+
+### Radiation is simpler, not harder
+
+Mars's greenhouse effect is ~5 K, not Earth's 33 K. Its absorbed flux is
+110.4 W/m² and `σ(210 K)⁴ = 110.3 W/m²`, so the required emissivity is **1.00**
+against Earth's 0.60.
+
+So `olr_model: graybody` (`OLR = ε·σT⁴`) is **the physics, not a fit** — and the
+230–300 K validity window that constrains the Earth model (§10) does not apply.
+
+### The CO₂ cycle
+
+Roughly a quarter of Mars's atmosphere freezes onto the winter pole each year.
+Three couplings follow, all represented:
+
+* **Latent buffering** — condensation pins the surface *at* the frost point.
+  Without it, modelled polar winters run away to 80 K against an observed ~148 K.
+* **Mass exchange** — condensed CO₂ leaves the atmosphere, lowering pressure,
+  which lowers the frost point. Condensation is therefore **self-limiting**.
+* **Albedo follows frost, not temperature** — so winter frost persists into
+  spring while the surface warms.
+
+```
+T_frost(p) = 3182.48 / (ln(1.382e12) − ln p)     # 148 K at 600 Pa
+```
+
+`MarsEBM` carries frost mass alongside temperature, so it is a subclass rather
+than a flag; the Earth model is untouched. It rejects `two_surface` — Mars has
+no ocean.
+
+### Atmospheric collapse is flagged, not clamped
+
+As `p → 0` the frost-point inversion **does not diverge** — it converges to
+~76 K. A frozen-out atmosphere would otherwise keep condensing against a
+meaningless threshold and report the result with a straight face.
+
+So `is_collapsed()` detects it and `run_year_co2` reports `collapsed_fraction`.
+Any value above zero means the reported temperatures and pressures are outside
+the model's domain. **The honest output there is "the atmosphere freezes out",
+not a temperature** — the same reasoning as the runaway flag in §10.
+
+### Validation
+
+| Quantity | Model | Observed |
+|---|---|---|
+| Polar winter minimum | 146.8 K | ~148 K |
+| Surface pressure | 596 Pa | ~600 Pa |
+| Seasonal swing | 22% | ~25% |
+| Peak cap thickness | 0.57 m | ~0.5–1 m |
+| CO₂ conservation | exact | — |
+
+### Usage
+
+```bash
+# Recover elements for any planet (IAU pole table); reads the Parquet tree
+python extract_mars_elements.py simulations/<STAMP>_parquet --body Mars --workers 5
+
+# Run the Mars climate across the sweep
+python climate_mars_from_simulations.py simulations/<STAMP> \
+    --config input_mars.yaml --workers 5
+```
+
+`input_mars.yaml` carries the calibrated parameters, including `D = 0.002` —
+about 300× smaller than Earth's, as a 6 mbar atmosphere warrants.

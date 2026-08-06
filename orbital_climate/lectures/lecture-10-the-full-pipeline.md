@@ -223,3 +223,26 @@ More usefully, you have watched a real project **get things wrong and correct it
 None of those were failures of effort or care. They were failures of a kind that only show up when someone checks — and the habit of checking is the only thing this course was ever really about.
 
 **Deliberately absent from this model:** the carbonate–silicate thermostat, clouds, ocean heat transport beyond diffusion, precession and obliquity cycling within a run, and any geometry beyond the zonal mean. Each is a natural extension, and each would change some of the numbers you have just spent ten lectures learning to distrust appropriately.
+
+---
+
+## Postscript — one extension, and what it taught
+
+One of those extensions was subsequently built: the same model, applied to **Mars**.
+
+Two things came out of it that are worth carrying away, because both contradict what the course might have led you to expect.
+
+**The physics got *simpler*, not harder.** Mars's greenhouse effect is ~5 K rather than Earth's 33 K — its absorbed flux is 110.4 W/m² and `σ(210 K)⁴ = 110.3 W/m²`, so the required emissivity is **1.00** against Earth's 0.60. The linear OLR of Lecture 1, the single largest approximation in this whole model and the source of its narrowest validity limit, simply **does not arise**: `σT⁴` is exact there. A second planet needed *less* fudging than the first.
+
+**And a parameter that dominated on Earth turned out to be negligible.** Lecture 6 established obliquity as the main control on seasonal amplitude. On Mars it is almost irrelevant:
+
+| | correlation with seasonal range |
+|---|---|
+| Eccentricity | **+0.771** |
+| Obliquity | +0.071 |
+
+The reason is Lecture 6's own quantity, τ. With `τ ≈ 6.6 days` Mars tracks the instantaneous `1/r²` forcing almost perfectly, so the perihelion–aphelion distance swing arrives undamped. Earth's ocean averages exactly that away and leaves only the tilt signal.
+
+**A parameter's importance is a property of the system, not of the parameter.** Nothing about eccentricity changed between the two planets — only what was listening.
+
+*(Mars also required genuinely new physics that has no Earth analogue: its atmosphere condenses onto the winter pole, so temperature, albedo and atmospheric mass become one coupled system. Without the latent heat of that condensation, modelled Martian winters run away to 80 K against an observed 148 K. And as before, the model needed a flag for when it leaves its own domain — the atmosphere freezing out entirely, in 13% of the sweep.)*

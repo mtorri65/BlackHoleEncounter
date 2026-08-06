@@ -21,11 +21,12 @@ the REBOUND black-hole-flyby sweeps in this repository.
 4. [Part III — Two-surface land/ocean extension](#4-part-iii--two-surface-landocean-extension)
 5. [Part IV — Bridging REBOUND to the climate model](#5-part-iv--bridging-rebound-to-the-climate-model)
 6. [Part V — Results](#6-part-v--results)
-7. [Corrections and negative results](#7-corrections-and-negative-results)
-8. [Bugs found and fixed](#8-bugs-found-and-fixed)
-9. [Known limitations](#9-known-limitations)
-10. [Data volume and archival](#10-data-volume-and-archival)
-11. [File inventory and reproduction](#11-file-inventory-and-reproduction)
+7. [Part VI — Mars: a condensing atmosphere](#7-part-vi--mars-a-condensing-atmosphere)
+8. [Corrections and negative results](#8-corrections-and-negative-results)
+9. [Bugs found and fixed](#9-bugs-found-and-fixed)
+10. [Known limitations](#10-known-limitations)
+11. [Data volume and archival](#11-data-volume-and-archival)
+12. [File inventory and reproduction](#12-file-inventory-and-reproduction)
 
 ---
 
@@ -130,7 +131,7 @@ and `a_ice` where `T < T_ice`.
 
 The linear OLR `A + B·T` shown here is the default. A nonlinear alternative
 (Sellers 1969) was added later once its validity range proved too narrow for
-this sweep — see §9 for the failure analysis and §6.8 for the consequences.
+this sweep — see §10 for the failure analysis and §6.8 for the consequences.
 
 ### 3.2 Discretisation
 
@@ -595,7 +596,159 @@ equilibrium (vs 15), peak hemispheric asymmetry 5.39 K decaying to 0.16 K, and
 
 ---
 
-## 7. Corrections and negative results
+## 7. Part VI — Mars: a condensing atmosphere
+
+The Earth model was extended to Mars, driven by the same sweep. The exercise
+was a test of how much of the model was physics and how much was Earth.
+
+### 7.1 What transferred unchanged
+
+Most of it. The Kepler solver, the insolation chain, the equal-area grid, the
+diffusion operator and the IMEX stepper are all planet-agnostic and were reused
+without modification. What is Earth-specific is only the **parameterisations**.
+
+### 7.2 Radiation got *simpler*
+
+The expectation was that a second planet would need more approximation. The
+opposite happened.
+
+Mars's absorbed flux is 110.4 W/m² and `σ(210 K)⁴ = 110.3 W/m²`, so the required
+emissivity is **1.00** against Earth's 0.60. Mars's greenhouse effect is ~5 K,
+not 33 K, so `OLR = σT⁴` is not a fit at all — it is the physics.
+
+| | Earth | Mars |
+|---|---|---|
+| OLR form | `A + B·T`, fitted | `σT⁴`, exact |
+| Required emissivity | 0.60 | **1.00** |
+| Validity window | 230–300 K | **none — it is a law** |
+
+The single largest approximation in the Earth model, and the source of its
+narrowest validity limit, simply does not arise. Radiative damping also falls
+out rather than being fitted: `B = 4σT³ = 2.10 W/m²/K`, coincidentally almost
+identical to Earth's fitted 2.09.
+
+Implemented as `olr_model: "graybody"` with `olr_emissivity`.
+
+### 7.3 The CO₂ cycle — the genuinely new physics
+
+Mars's atmosphere condenses. Roughly a quarter of it freezes onto the winter
+pole each year and sublimates back in spring, coupling three things an Earth EBM
+keeps separate: surface temperature, surface albedo, and atmospheric mass.
+
+Three couplings, all represented in [`orbital_climate/mars.py`](orbital_climate/mars.py):
+
+* **Latent buffering.** Where the surface would cool below the frost point, CO₂
+  condenses instead and the latent heat pins the temperature *at* that point.
+  Polar winter temperature is therefore set by thermodynamics, not by the energy
+  balance.
+* **Mass exchange.** Condensed CO₂ leaves the atmosphere, lowering surface
+  pressure, which lowers the frost point (Clausius–Clapeyron). Condensation is
+  therefore **self-limiting** — a negative feedback, unlike ice-albedo.
+* **Albedo.** Coalbedo follows the *presence of frost*, not a temperature
+  threshold, so winter frost persists into spring while the surface warms.
+
+`MarsEBM` carries a second state variable (frost mass per unit area) alongside
+temperature, so it is a subclass rather than a flag — the Earth model is
+untouched.
+
+**Why it is not optional.** Without latent heat the modelled polar winter runs
+away to **80 K** against an observed ~148 K — an error of ~70 K in exactly the
+quantity that governs the seasonal cap cycle.
+
+### 7.4 Calibration and validation
+
+`D` was refitted to Mars's much weaker transport: **0.002**, roughly 300× smaller
+than Earth's 0.58, which is what a 6 mbar atmosphere warrants.
+
+| Quantity | Model | Observed |
+|---|---|---|
+| Polar winter minimum | **146.8 K** | ~148 K |
+| Surface pressure (annual mean) | **596 Pa** | ~600 Pa |
+| Seasonal atmospheric swing | **22%** | ~25% |
+| Peak cap thickness | **0.57 m** | ~0.5–1 m |
+| Global mean | 203.4 K | ~210 K |
+| CO₂ conservation | **exact** | — |
+
+Note the global mean sits *below* the 210 K zeroth-order estimate, and correctly
+so: `OLR ∝ T⁴` is convex, so a planet with strong gradients radiates more
+efficiently than a uniform one at the same mean, giving `⟨T⟩ < T_eff`.
+
+### 7.5 Element recovery, generalised
+
+[`extract_mars_elements.py`](extract_mars_elements.py) generalises §5's recovery
+to any planet. Earth's case was special — the frame's z-axis *is* its spin axis —
+so the general form takes the spin axis from an **IAU pole table** instead.
+Validated by returning Mars's present-day `a = 1.5237`, `e = 0.0934`,
+`obliquity = 25.18°` against the true 1.524 / 0.0934 / 25.19.
+
+One cost worth recording: it reads the **float32** Parquet tree rather than the
+original float64 workbooks, so pre-flyby values vary by ~10⁻¹¹ across runs rather
+than Earth's ~10⁻²². Harmless at four significant figures, but it is the price
+paid for the 5.7× compression, and belongs beside the saving.
+
+### 7.6 Sweep results
+
+654 usable runs of 672 (14 with Mars unbound, 4 outside the band).
+
+**Atmospheric collapse is flagged, not reported.** 86 runs (13%) freeze the
+atmosphere out at some point in the year, 8 (1%) for the whole year. They are
+systematically the cold, distant cases — median `a` 2.39 AU against 1.49 for
+valid runs, and less than half the annual-mean insolation.
+
+Restricted to the 568 runs the model can speak about:
+
+| | median | 5th | 95th |
+|---|---|---|---|
+| Global mean T | 206.2 K | 175.1 | 234.9 |
+| Equatorial seasonal range | 42.6 K | 19.1 | 139.3 |
+| Pressure swing | 0.30 | 0.17 | 0.89 |
+
+**Eccentricity drives Martian seasons, not obliquity** — and this inverts the
+Earth result:
+
+| | correlation with seasonal range |
+|---|---|
+| Eccentricity | **+0.771** |
+| Obliquity | +0.071 |
+
+On Earth obliquity dominates (§4). The reason is thermal inertia: with
+`τ ≈ 6.6 days` Mars tracks the instantaneous `1/r²` forcing almost perfectly, so
+the perihelion–aphelion distance swing arrives undamped. Earth's ocean averages
+that away and leaves only the tilt signal. **The same parameter can dominate on
+one planet and be negligible on another, for reasons that have nothing to do
+with the parameter itself.**
+
+**120 runs (21%) see the equator exceed 273 K**, and among those it stays above
+freezing for a median 22% of the year.
+
+### 7.7 A worked scenario
+
+Run `…rp0p5__vinf25__inc30__…Om0__om0` — chosen because it is the one case in
+the sweep where **Mercury is captured by the black hole** (a = 0.128 AU, e = 0.251,
+53-day period, departing at 820 AU). In the same run:
+
+| | Earth | Mars |
+|---|---|---|
+| Post-flyby `a` | 1.451 AU (outward) | **1.295 AU (inward)** |
+| Outcome | **snowball, 184 K** | **warms +12.5 K** |
+| Time to freeze | ice to the equator by **year 2** | — |
+| Equatorial seasonal range | — | **119 K** (23 K today) |
+| Equatorial summer peak | — | **310 K** — above the melting point of water |
+| Pressure swing | — | **61%** |
+
+**They swap places.** Earth is flung out and freezes; Mars is pulled in and
+becomes a violently seasonal world crossing 273 K every perihelion.
+
+The scenario is *not* representative, and the sweep is what establishes that:
+Mars warming is a **coin flip** across the sweep (49% warmer, 51% cooler, median
+−1.7 K), and this run sits at the **86th percentile** for warming, the **90th**
+for seasonal range and the **95th** for peak temperature. A single-run study
+would have supported "the flyby warms Mars while freezing Earth" — a false
+generalisation of exactly the kind §9 warns about.
+
+---
+
+## 8. Corrections and negative results
 
 Recorded deliberately — several initial claims did not survive testing.
 
@@ -609,6 +762,8 @@ Recorded deliberately — several initial claims did not survive testing.
 | "The old model missed the glacial-inception signal" | **Regime-dependent.** True for pure eccentricity injection; across this sweep the single-surface model actually *over*-predicts summer cooling (63% vs 47%). |
 | A hardcoded Kepler test constant of 1.1934205 | Recomputed independently: **1.1853242**. The original would have validated a broken solver. |
 | Apparent `λ_p` → temperature correlation of +0.59 | **Spurious** — collinear with `a`. Controlling for insolation: −0.22. |
+| "A second planet will need *more* approximation than Earth" | **Backwards.** Mars's radiation is *simpler*: emissivity 1.00 makes `σT⁴` exact rather than fitted, removing the Earth model's narrowest validity limit entirely. |
+| A Mars test asserting the year's minimum temperature against a single end-of-year frost point | **The test was wrong, not the model.** The frost point *moves* as pressure falls; the minimum matched the frost point at minimum pressure exactly. Rewritten to compare step by step, plus an assertion that the frost point moves at all. |
 
 ### 7.2 Genuine negative results
 
@@ -619,10 +774,13 @@ Recorded deliberately — several initial claims did not survive testing.
   the model having a genuine bifurcation.
 * **A blended heat capacity is not a useful approximation** (9% effect) — worth
   recording so the cheap approach is not re-attempted.
+* **Obliquity barely affects Martian seasonal amplitude** (r = +0.07, against
+  +0.771 for eccentricity) — the reverse of Earth, and a reminder that a
+  parameter's importance is a property of the system, not of the parameter.
 
 ---
 
-## 8. Bugs found and fixed
+## 9. Bugs found and fixed
 
 | Bug | Where | Consequence |
 |---|---|---|
@@ -637,7 +795,7 @@ Recorded deliberately — several initial claims did not survive testing.
 
 ---
 
-## 9. Known limitations
+## 10. Known limitations
 
 1. **OLR parameterisation.** The default linear form `A + B·T` (Budyko 1969) is
    calibrated near 288 K and fails differently at each end:
@@ -683,9 +841,23 @@ Recorded deliberately — several initial claims did not survive testing.
 7. **`two_surface` cannot be meaningfully swept** by the sweep harness (it is a
    boolean).
 
+### Mars model (§7)
+
+8. **Fixed emissivity.** `ε = 1.0` is exact at 600 Pa but cannot represent a
+   thickened atmosphere developing a real greenhouse. **This is the remaining
+   *unflagged* limit** — it bites in the hot direction, where sublimating caps
+   would raise pressure, and unlike the collapse case nothing detects it.
+9. **Fixed CO₂ inventory.** CO₂ moves only between atmosphere and caps. No
+   regolith adsorption, no escape to space.
+10. **Atmospheric collapse is flagged but not modelled.** 86 runs (13%) freeze
+    out at some point; the honest output there is "the atmosphere freezes out",
+    not a temperature.
+11. **No dust.** Real Martian albedo and opacity swing with global dust storms,
+    which dominate its interannual variability.
+
 ---
 
-## 10. Data volume and archival
+## 11. Data volume and archival
 
 The engine writes one `*__orbits__*.xlsx` per run at ~220 MB, making the 672-run
 sweep **150.7 GB**. Almost all of that is format overhead, not information:
@@ -740,7 +912,7 @@ the encounter or the engine writes Parquet directly.
 
 ---
 
-## 11. File inventory and reproduction
+## 12. File inventory and reproduction
 
 ### Package — [`orbital_climate/`](orbital_climate/)
 
@@ -754,6 +926,7 @@ the encounter or the engine writes Parquet directly.
 | `config.py` | `Config` dataclass + YAML loading |
 | `cli.py` | `insolation` / `ebm` / `sweep` subcommands |
 | `tests/` | **61 tests** |
+| `mars.py` | Condensing-CO2 atmosphere (`MarsEBM`): frost point, latent buffering, mass exchange, collapse flag |
 | `MANUAL.md` | Usage manual |
 
 ### Bridge scripts — repository root
@@ -764,7 +937,10 @@ the encounter or the engine writes Parquet directly.
 | `climate_from_simulations.py` | Runs the EBM on every simulation; equilibrium or transient; parallel |
 | `rank_run_impact.py` | Ranks runs by orbital disruption (energy/eccentricity/perihelion metric) |
 | `convert_orbits_to_parquet.py` | Converts the orbit workbooks to Parquet (5.7x smaller), with structural, round-trip and scientific verification |
-| `input_climate.yaml` | Shared configuration |
+| `extract_mars_elements.py` | Element recovery generalised to any planet via an IAU pole table |
+| `climate_mars_from_simulations.py` | Runs the Mars model across a sweep |
+| `input_climate.yaml` | Shared configuration (Earth) |
+| `input_mars.yaml` | Mars configuration |
 
 ### Reproduction
 
@@ -792,6 +968,10 @@ python climate_from_simulations.py simulations/<STAMP> \
 python climate_from_simulations.py simulations/<STAMP> \
     --config input_climate.yaml --olr-model sellers --two-surface \
     --transient --years 40 --workers 5
+
+# 5b. Mars: recover its elements (any planet via --body), then run its climate
+python extract_mars_elements.py simulations/<STAMP>_parquet --body Mars --workers 5
+python climate_mars_from_simulations.py simulations/<STAMP>     --config input_mars.yaml --workers 5
 
 # 6. (Storage) Compress the orbit workbooks ~5.7x, with verification.
 #    Source files are never deleted; remove them yourself once backed up.
@@ -830,6 +1010,13 @@ Every quantitative claim in this report, and where it was checked:
 | Land/ocean calibration | 65 °N seasonal ranges | 40.1 K / 9.1 K vs ~40 / ~8–9 |
 | Two surfaces preserve energetics | global mean shift | 288.14 → 288.42 K |
 | Equilibrium robust to initial state | 12 runs at the bifurcation | zero flips |
+| **Mars** — element recovery | applied at `t = 0` | a = 1.5237, e = 0.0934, ε = 25.18° |
+| **Mars** — grey-body OLR justified | absorbed vs `σ(210 K)⁴` | 110.4 vs 110.3 W/m² → ε = 1.00 |
+| **Mars** — latent buffering | polar winter minimum | 146.8 K vs observed ~148 K |
+| **Mars** — CO₂ conservation | through a full year | exact (< 10⁻¹⁰) |
+| **Mars** — frost point | inversion round-trip, and at 600 Pa | exact; 148 K vs observed ~148 K |
+| **Mars** — seasonal cycle | pressure, swing, cap thickness | 596 Pa / 22% / 0.57 m vs ~600 / ~25% / ~0.5–1 m |
+| **Mars** — reduces to base model | condensation suppressed | identical to `EBM` step for step |
 | Linear OLR hard floor | solve `A + B·T = 0` | 175.9 K; negative below |
 | Sellers matches linear at present day | point comparison at 288 K | 235.1 vs 234.3 W/m² (0.3%) |
 | Sellers physical when frozen | Sellers/blackbody at 180–220 K | 0.89–0.97 (linear collapses to 0.14) |
