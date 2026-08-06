@@ -191,24 +191,34 @@ class EBM:
     def olr(self, T: np.ndarray) -> np.ndarray:
         """Outgoing longwave radiation [W m^-2] for temperature ``T`` [degC].
 
-        ``linear``  -- Budyko (1969):  A + B*T
-        ``sellers`` -- Sellers (1969): sigma T_K^4 [1 - m tanh(19 T_K^6 1e-16)]
+        ``linear``   -- Budyko (1969):  A + B*T
+        ``sellers``  -- Sellers (1969): sigma T_K^4 [1 - m tanh(19 T_K^6 1e-16)]
+        ``graybody`` -- emissivity * sigma T_K^4
 
         The Sellers form matches the linear one at present-day Earth (235.1 vs
         234.3 W/m^2 at 288 K) but, unlike it, tends to blackbody emission as the
         planet freezes and its atmosphere dries -- the physically correct limit.
+
+        ``graybody`` suits a body whose greenhouse effect is negligible. Mars is
+        the case in point: its absorbed flux today is 110.4 W/m^2 and
+        sigma (210 K)^4 = 110.3 W/m^2, so the required emissivity is 1.00
+        against Earth's 0.60. For such a body this is not an approximation at
+        all -- it removes the fitted-OLR validity limit entirely, since
+        sigma T^4 is a law rather than a regression.
         """
         model = str(self.cfg.olr_model).lower()
         if model == "linear":
             return self.cfg.olr_A + self.cfg.olr_B * np.asarray(T, dtype=float)
-        if model == "sellers":
+        if model in ("sellers", "graybody"):
             # Clamp to a small positive absolute temperature: the explicit
             # source can transiently probe unphysical values during spin-up.
             T_K = np.maximum(np.asarray(T, dtype=float) + KELVIN, 1.0)
+            if model == "graybody":
+                return self.cfg.olr_emissivity * SIGMA_SB * T_K ** 4
             return SIGMA_SB * T_K ** 4 * (
                 1.0 - self.cfg.sellers_m * np.tanh(19.0 * T_K ** 6 * 1e-16))
         raise ValueError(f"Unknown olr_model {self.cfg.olr_model!r}; "
-                         "expected 'linear' or 'sellers'.")
+                         "expected 'linear', 'sellers' or 'graybody'.")
 
     def insolation(self, M: float) -> np.ndarray:
         """Daily-mean insolation Q(x) at orbital mean anomaly ``M`` [rad]."""

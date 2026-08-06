@@ -1,0 +1,71 @@
+# ===========================================================
+# Mars configuration for the orbital climate model
+# Phase 1: recalibrated parameterisations, no CO2 cycle yet.
+# Angles in degrees; distances in AU.
+# ===========================================================
+
+# -----------------------------------------------------------
+# ORBIT (present-day Mars; override per scenario)
+# -----------------------------------------------------------
+S0: 1361.0              # solar constant at 1 AU [W/m^2] -- same star
+a_au: 1.5237
+ecc: 0.0934
+obliquity_deg: 25.19
+lon_perihelion_deg: 250.5   # recovered from the simulation at t=0
+days_per_year: 686.98       # Mars sidereal year
+
+# -----------------------------------------------------------
+# RADIATION
+# -----------------------------------------------------------
+# Mars's greenhouse effect is ~5 K, not Earth's 33 K. Its absorbed flux today
+# is 110.4 W/m^2 and sigma*(210 K)^4 = 110.3 W/m^2, so emissivity ~= 1.00.
+# A grey body is therefore not an approximation here -- it is the physics, and
+# it removes the fitted-OLR validity window that constrains the Earth model.
+olr_model: graybody
+olr_emissivity: 1.0
+
+# Unused with graybody, retained so the file loads under any olr_model.
+olr_A: 203.3
+olr_B: 2.09
+
+# -----------------------------------------------------------
+# SURFACE
+# -----------------------------------------------------------
+# Bond albedo ~0.25 -> coalbedo 0.75. a2 kept at 0 for now: Mars's albedo
+# latitude structure is dominated by the seasonal frost caps, which the
+# T_ice switch below already represents. Revisit once the CO2 cycle exists.
+coalbedo_a0: 0.75
+coalbedo_a2: 0.0
+
+# CO2 frost, not water ice. Frost point at 600 Pa is 148 K = -125 degC
+# (Clausius-Clapeyron; matches the observed winter polar cap temperature).
+# Fresh CO2 frost albedo ~0.60-0.65 -> coalbedo ~0.38.
+T_ice_degC: -125.0
+coalbedo_ice: 0.38
+
+# -----------------------------------------------------------
+# THERMAL INERTIA
+# -----------------------------------------------------------
+# Regolith with a ~1 m seasonal skin depth: C ~ 1.2e6 J/m^2/K.
+# With B = 4 sigma T^3 = 2.10 W/m^2/K this gives tau ~ 6.6 days, so Mars
+# tracks the seasonal forcing almost instantaneously. There is no ocean, so
+# the two-surface land/ocean split is unnecessary -- Mars is all "land".
+heat_capacity: 1.2e6
+two_surface: false
+
+# -----------------------------------------------------------
+# HEAT TRANSPORT
+# -----------------------------------------------------------
+# PROVISIONAL. Mars's 6 mbar atmosphere transports far less heat than Earth's,
+# so D must be well below Earth's 0.58 and is calibrated in Phase 1 against the
+# observed equator-to-pole gradient. Do not trust this value until then.
+diffusion_D: 0.10
+
+# -----------------------------------------------------------
+# GRID / TIME STEPPING
+# -----------------------------------------------------------
+n_lat: 90
+dt_days: 3.8            # ~= days_per_year / 180
+spinup_max_years: 200
+spinup_tol_degC: 1.0e-4
+diag_lat_deg: 65.0

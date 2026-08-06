@@ -65,6 +65,11 @@ class Config:
     # the full latitude profile are accounted for).
     sellers_m: float = 0.51
 
+    # Emissivity for olr_model = "graybody" (OLR = emissivity * sigma T^4).
+    # 1.0 is correct for a body with negligible greenhouse effect; Mars needs
+    # 1.00, Earth would need ~0.60.
+    olr_emissivity: float = 1.0
+
     # Simpson-Nakajima ceiling: the maximum OLR a moist atmosphere can sustain
     # (Nakajima, Hayashi & Abe 1992). If the absorbed flux exceeds it there is
     # *no* equilibrium -- the planet enters a runaway greenhouse. This is used as
@@ -97,6 +102,17 @@ class Config:
     # continental vs. maritime seasonality.
     land_ocean_coupling: float = 3.5
     land_fraction_override: float | None = None   # force a uniform land fraction if set
+
+    # --- Condensable-atmosphere (CO2) cycle: see orbital_climate/mars.py ---
+    # On Mars the atmosphere itself condenses onto the winter pole, removing
+    # mass from the atmosphere and buffering the surface at the frost point via
+    # latent heat. Without it, modelled polar winters overshoot to ~80 K against
+    # an observed ~148 K.
+    co2_cycle: bool = False
+    co2_inventory_kg_m2: float = 200.0    # total CO2 (atmosphere + caps) [kg/m^2]
+    co2_latent_heat: float = 5.9e5        # sublimation enthalpy [J/kg]
+    surface_gravity: float = 3.71         # [m/s^2]; Mars
+    co2_frost_albedo: float = 0.62        # fresh CO2 frost; coalbedo = 1 - this
     n_lat: int = 180                # number of latitude cells (cell-centred in x=sin(phi))
 
     # Latitude at which the seasonal peak/trough temperature and peak insolation
