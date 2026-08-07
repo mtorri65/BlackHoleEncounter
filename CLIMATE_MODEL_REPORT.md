@@ -27,6 +27,7 @@ the REBOUND black-hole-flyby sweeps in this repository.
 10. [Known limitations](#10-known-limitations)
 11. [Data volume and archival](#11-data-volume-and-archival)
 12. [File inventory and reproduction](#12-file-inventory-and-reproduction)
+13. [References](#13-references)
 
 ---
 
@@ -843,12 +844,36 @@ Recorded deliberately — several initial claims did not survive testing.
 
 ### Mars model (§7)
 
-8. **Fixed emissivity.** `ε = 1.0` is exact at 600 Pa but cannot represent a
-   thickened atmosphere developing a real greenhouse. **This is the remaining
-   *unflagged* limit** — it bites in the hot direction, where sublimating caps
-   would raise pressure, and unlike the collapse case nothing detects it.
-9. **Fixed CO₂ inventory.** CO₂ moves only between atmosphere and caps. No
-   regolith adsorption, no escape to space.
+8. **Fixed emissivity and fixed CO₂ inventory are one assumption, not two.**
+   This was originally recorded here as two separate limitations. That was
+   wrong, and the coupling matters.
+
+   `ε = 1.0` is exact at 600 Pa and cannot represent a thickened atmosphere
+   developing a real greenhouse — so it appears to be a limit that bites in the
+   *hot* direction. But the inventory is fixed at 200 kg/m², which caps surface
+   pressure at `200 × 3.71 = 742 Pa` — **1.24× present-day Mars**, and the
+   sweep confirms no run exceeds it. Over that range a grey-gas greenhouse
+   varies from +3.8 K to +4.7 K, so a pressure-dependent emissivity would change
+   nothing.
+
+   **Neither limit is reachable while the other holds.** Relaxing emissivity
+   alone buys under 1 K; relaxing the inventory alone lets pressure rise while
+   the greenhouse stays deaf to it. Only the pair does anything — and then it
+   does a great deal: with the inventory free, mean temperature runs 208.6 K at
+   200 kg/m², 228.8 K at 1000, and 289.5 K at 5000, because warmer means less
+   condensation means higher pressure means warmer still.
+
+   Both are therefore **unflagged limits of the same physical assumption**:
+   that Mars's exchangeable CO₂ is small and its greenhouse negligible. Both are
+   true of present-day Mars and neither is checked by the model.
+
+   Explored on the `mars-thick-atmosphere` branch (not merged), which adds
+   `olr_model="graygas"` and finds a genuine but *narrow* tipping point — two
+   stable states spanning ~1.4% of insolation. See §8 for the failed first
+   attempt to measure it.
+9. **No regolith or escape reservoir.** CO₂ moves only between atmosphere and
+   seasonal caps. Mars's permanent cap, adsorbed regolith CO₂, and loss to space
+   are all absent, which is what pins the inventory in the first place.
 10. **Atmospheric collapse is flagged but not modelled.** 86 runs (13%) freeze
     out at some point; the honest output there is "the atmosphere freezes out",
     not a temperature.
@@ -987,6 +1012,136 @@ python convert_orbits_to_parquet.py simulations/<STAMP> --workers 5
 | `<STAMP>_climate.csv` | Single-surface equilibrium climate |
 | `<STAMP>_climate_2surf.csv` | Two-surface equilibrium climate + land/ocean seasonal columns |
 | `<STAMP>_climate_2surf_transient.csv` | Transient adjustment metrics |
+
+---
+
+## 13. References
+
+**A caveat on this list.** These citations were compiled from working knowledge
+rather than by consulting the papers, so **volume and page numbers in particular
+should be verified against the primary sources** before any of this is quoted
+elsewhere. Author, year and title are the parts to trust; the rest is a pointer.
+This matters more than usual here, because §8 records a case where a plausible
+number written down from memory would have certified a broken solver.
+
+### Energy-balance climate models
+
+* **Budyko, M. I.** (1969). *The effect of solar radiation variations on the
+  climate of the Earth.* Tellus **21**, 611–619.
+  — The linear OLR parameterisation `A + B·T` used throughout the Earth model,
+  and the ice-albedo feedback.
+* **Sellers, W. D.** (1969). *A global climatic model based on the energy balance
+  of the earth–atmosphere system.* Journal of Applied Meteorology **8**, 392–400.
+  — The nonlinear OLR form implemented as `olr_model="sellers"`.
+* **North, G. R., & Coakley, J. A.** (1979). *Differences between seasonal and
+  mean annual energy balance model calculations of climate and climate
+  sensitivity.* Journal of the Atmospheric Sciences **36**, 1189–1204.
+  — The two-surface land/ocean formulation of §4.
+* **North, G. R., Cahalan, R. F., & Coakley, J. A.** (1981). *Energy balance
+  climate models.* Reviews of Geophysics **19**, 91–121.
+  — The benchmark review; source of the diffusion formulation and standard
+  parameter values.
+
+### Radiation and the limits of parameterised OLR
+
+* **Koll, D. D. B., & Cronin, T. W.** (2018). *Earth's outgoing longwave
+  radiation linear due to H₂O greenhouse effect.* PNAS **115**, 10293–10298.
+  — Explains *why* Earth's OLR is quasi-linear at all, and where that breaks.
+  The reference for §10.1's validity analysis.
+* **Nakajima, S., Hayashi, Y.-Y., & Abe, Y.** (1992). *A study on the "runaway
+  greenhouse effect" with a one-dimensional radiative–convective equilibrium
+  model.* Journal of the Atmospheric Sciences **49**, 2256–2266.
+  — The Simpson–Nakajima OLR ceiling used for the runaway flag.
+* **Goody, R. M., & Yung, Y. L.** (1989). *Atmospheric Radiation: Theoretical
+  Basis*, 2nd ed. Oxford University Press.
+  — Grey-gas radiative transfer, the basis of `olr_model="graygas"`.
+* **Pierrehumbert, R. T.** (2010). *Principles of Planetary Climate.* Cambridge
+  University Press.
+  — Source of the grey-atmosphere relation `T_surf⁴ = T_eff⁴(1 + 3τ/4)`, and of
+  much of the framing in §7.
+
+### Mars: the CO₂ cycle
+
+* **Leighton, R. B., & Murray, B. C.** (1966). *Behavior of carbon dioxide and
+  other volatiles on Mars.* Science **153**, 136–144.
+  — The foundational paper. Predicted the seasonal CO₂ condensation cycle, and
+  that polar temperatures would be buffered at the frost point, *before* it was
+  observed. This is the physics implemented in `orbital_climate/mars.py`.
+* **Gierasch, P. J., & Toon, O. B.** (1973). *Atmospheric pressure variation and
+  the climate of Mars.* Journal of the Atmospheric Sciences **30**, 1502–1508.
+  — Directly relevant to the `mars-thick-atmosphere` branch: identifies the
+  pressure–greenhouse feedback and the possibility of multiple stable
+  atmospheric states.
+* **James, P. B., Kieffer, H. H., & Paige, D. A.** (1992). *The seasonal cycle of
+  carbon dioxide on Mars.* In *Mars* (Kieffer et al., eds.), University of
+  Arizona Press, 934–968.
+  — Standard reference for the observed cycle and for the CO₂ vapour-pressure
+  relation used to obtain the frost point.
+* **Kieffer, H. H., et al.** (1976). *Infrared thermal mapping of the Martian
+  surface and atmosphere: First results.* Science **193**, 780–786.
+  — Viking observations establishing the ~148 K winter polar cap temperature
+  against which the latent-buffering result is validated.
+* **Soto, A., Mischna, M., Richardson, M., et al.** (2015). *Martian atmospheric
+  collapse: Idealized GCM studies.* Icarus **250**, 553–569.
+  — Atmospheric collapse in a full GCM; the phenomenon the collapse flag detects.
+
+### Mars: thick atmospheres and early climate
+
+* **Kasting, J. F.** (1991). *CO₂ condensation and the climate of early Mars.*
+  Icarus **94**, 1–13.
+* **Forget, F., & Pierrehumbert, R. T.** (1997). *Warming early Mars with carbon
+  dioxide clouds that scatter infrared radiation.* Science **278**, 1273–1276.
+* **Wordsworth, R. D.** (2016). *The climate of early Mars.* Annual Review of
+  Earth and Planetary Sciences **44**, 381–408.
+  — Review; the context for the thick-atmosphere results on the experimental
+  branch, and for why a single grey optical depth is inadequate there.
+
+### Orbital forcing and Milankovitch
+
+* **Ward, W. R.** (1974). *Climatic variations on Mars: 1. Astronomical theory of
+  insolation.* Journal of Geophysical Research **79**, 3375–3386.
+  — Orbital forcing of Martian climate; counterpart to the Earth Milankovitch
+  literature.
+* **Laskar, J., Correia, A. C. M., Gastineau, M., et al.** (2004). *Long term
+  evolution and chaotic diffusion of the insolation quantities of Mars.* Icarus
+  **170**, 343–364.
+  — Mars's chaotic obliquity, and why the 38° obliquity found in §7.7 is not
+  exotic on long timescales.
+* **Kasting, J. F., Whitmire, D. P., & Reynolds, R. T.** (1993). *Habitable zones
+  around main sequence stars.* Icarus **101**, 108–128.
+* **Kopparapu, R. K., et al.** (2013). *Habitable zones around main-sequence
+  stars: New estimates.* The Astrophysical Journal **765**, 131.
+  — The runaway-greenhouse and CO₂-condensation limits framing §10.1.
+
+### Reference frames and planetary data
+
+* **Archinal, B. A., et al.** (2018). *Report of the IAU Working Group on
+  Cartographic Coordinates and Rotational Elements: 2015.* Celestial Mechanics
+  and Dynamical Astronomy **130**, 22.
+  — Source of the IAU pole orientations in `extract_mars_elements.py`; Mars's
+  pole at α₀ = 317.68143°, δ₀ = 52.88650° is what makes the recovery of §7.5
+  possible.
+* **Putzig, N. E., & Mellon, M. T.** (2007). *Apparent thermal inertia and the
+  surface heterogeneity of Mars.* Icarus **191**, 68–94.
+  — Regolith thermal inertia, the basis for `heat_capacity = 1.2 × 10⁶`
+  (τ ≈ 6.6 days).
+* **NASA/GSFC Planetary Fact Sheets.**
+  https://nssdc.gsfc.nasa.gov/planetary/factsheet/
+  — Bulk orbital and physical parameters used as calibration targets.
+
+### Numerical methods and the N-body simulation
+
+* **Rein, H., & Liu, S.-F.** (2012). *REBOUND: An open-source multi-purpose
+  N-body code for collisional dynamics.* Astronomy & Astrophysics **537**, A128.
+* **Rein, H., & Spiegel, D. S.** (2015). *IAS15: A fast, adaptive, high-order
+  integrator for gravitational dynamics, accurate to machine precision over a
+  billion orbits.* MNRAS **446**, 1424–1437.
+  — The integrator behind the flyby sweep.
+* **Ascher, U. M., Ruuth, S. J., & Wetterton, B. T. R.** (1995).
+  *Implicit–explicit methods for time-dependent partial differential equations.*
+  SIAM Journal on Numerical Analysis **32**, 797–823.
+  — The IMEX splitting of §3.3, including retaining a linear term implicitly as
+  a preconditioner while carrying the nonlinear remainder explicitly.
 
 ---
 
