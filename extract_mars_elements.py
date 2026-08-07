@@ -127,9 +127,13 @@ def main() -> int:
     p.add_argument("--workers", type=int, default=1)
     args = p.parse_args()
 
-    files = sorted(glob.glob(str(args.parquet_dir / "*" / "orbits.parquet")))
+    # Two layouts: "orbits.parquet" from convert_orbits_to_parquet.py, and the
+    # run-prefixed "<stamp>__...__orbits__<rp>__<m>.parquet" the engine writes
+    # natively since v26. One run cannot have both, so a plain union is safe.
+    files = sorted(set(glob.glob(str(args.parquet_dir / "*" / "orbits.parquet")))
+                   | set(glob.glob(str(args.parquet_dir / "*" / "*orbits*.parquet"))))
     if not files:
-        raise SystemExit(f"No orbits.parquet found under {args.parquet_dir}")
+        raise SystemExit(f"No orbits Parquet found under {args.parquet_dir}")
     jobs = [(f, args.body) for f in files]
 
     rows = []

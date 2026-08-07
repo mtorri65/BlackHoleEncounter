@@ -36,7 +36,17 @@ bh_omega_deg: "0, 270, 90"                # Argument of periapsis ω [deg]
 # -----------------------------------------------------------
 duration_days: 112420               # Total span to integrate [days] (365 days = 1 year)
 dump_interval_days: 1            # Write compressed snapshots every N days
-output_interval_days: 1           # Log samples for Excel/plots every N days
+output_interval_days: 30          # Log samples every N days AWAY from the encounter
+
+# Two-rate logging. Everything interesting happens within a few years of
+# periapsis; the rest of the 308-year span is secular drift that 30-day sampling
+# captures perfectly well. Set output_dense_window_days to 0 (or delete these two
+# lines) to log at a single uniform rate, as older versions did.
+#
+# With the values below, a run logs ~1825 dense + ~3650 coarse rows instead of
+# 112,420 -- about 20x less output, with full resolution where it matters.
+output_dense_window_days: 1825    # +/- 5 years around bh_tperi_offset_days
+output_dense_interval_days: 1     # Log every N days inside that window
 
 # Hybrid integrator (Mercurius if available, else WHFast)
 dt_days: 0.01                      # Timestep for WHFast/Mercurius [days]
@@ -73,6 +83,10 @@ archive_interval_days: 1.0        # Snapshot interval in archive [days]
 archive_filename: "archive.bin"   # Archive filename (auto-prefixed per run)
 write_npz: false
 write_mp4: false
+
+# Trajectory output format: "parquet" (default, ~5x smaller and what the
+# analysis scripts read), "xlsx" (legacy), or "both".
+orbits_format: parquet
 
 write_uncertainty_csv: false
 uncertainty_bodies: all

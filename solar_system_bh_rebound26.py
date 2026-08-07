@@ -664,12 +664,33 @@ def integrate_and_dump(
     epoch_dt_utc,        # required (your RA/Dec timestamps)
     write_npz=True,      # <<< NEW
     sim_baseline=None,
+    params_for_cadence=None,   # enables the optional dense/coarse logging split
 ):
+    params_for_cadence = params_for_cadence or {}
 
     if dump_interval_days <= 0:
         dump_interval_days = duration_days
     steps = int(math.ceil(duration_days / dump_interval_days))
     last_logged_t = -1e99
+
+    # Optional two-rate logging. Almost all of the interesting dynamics happens
+    # within a few years of the encounter; the rest of a 300-year integration is
+    # secular drift that does not need daily sampling. Logging densely only near
+    # periapsis and coarsely elsewhere cuts the output volume by more than an
+    # order of magnitude with no loss of anything anyone looks at.
+    #
+    # Disabled unless output_dense_window_days is set, so existing configs are
+    # unaffected.
+    dense_window = float(params_for_cadence.get("output_dense_window_days", 0.0) or 0.0)
+    dense_interval = float(
+        params_for_cadence.get("output_dense_interval_days", output_interval_days))
+    t_peri = float(params_for_cadence.get("bh_tperi_offset_days", 0.0))
+
+    def interval_at(t):
+        """Logging interval [days] appropriate to simulation time ``t``."""
+        if dense_window > 0.0 and abs(t - t_peri) <= dense_window:
+            return dense_interval
+        return output_interval_days
 
     # >>> BH RA/Dec storage (ICRF geocentric) <<<
     bh_radec = {"t_days": [], "utc_iso": [], "RA_hours": [], "Dec_deg": []}
@@ -694,7 +715,7 @@ def integrate_and_dump(
         # >>> NPZ snapshots optional <<<
         write_snapshot(sim, output_dir, t_target, names=BODY_NAMES, write_npz=write_npz)
 
-        if (t_target - last_logged_t) >= max(1e-9, output_interval_days):
+        if (t_target - last_logged_t) >= max(1e-9, interval_at(t_target)):
             record_logs(sim, logs, BODY_NAMES, t_target, sim_baseline=sim_baseline)
             last_logged_t = t_target
 
@@ -748,6 +769,57 @@ def integrate_and_dump(
             print(f"[t={t_target:9.3f} d] r_BH-Sun={r_bh_sun:.3f} AU")
 
     return bh_radec
+
+
+def write_orbits_parquet(base_dir: Path, params: dict, logs: dict, body_names):
+    """Write the per-body trajectory log as a single long-format Parquet file.
+
+    The Excel writer produces ~220 MB per run: seventeen columns of which only
+    seven are independent (the rest are derived quantities plus duplicate string
+    copies of every number), all stored as XML text. Converting an existing
+    sweep gave a 5.7x reduction; writing Parquet directly avoids generating the
+    bulk in the first place.
+
+    Layout matches ``convert_orbits_to_parquet.py`` so that anything reading
+    converted sweeps also reads native ones: one row per (body, time), columns
+    ``body, t_days, x_au, y_au, z_au, vx, vy, vz, disp_helio_au``.
+
+    Only genuinely independent quantities are stored. ``r_helio`` and the tidal
+    accelerations are recomputable from the state vectors; ``disp_helio`` is not,
+    because it is measured against a separate BH-free baseline integration, so
+    it is kept.
+    """
+    rp_token = safe_num_for_filename(params["bh_rp_au"])
+    m_token = safe_num_for_filename(params["bh_mass_msun"])
+    path = _prefix_path(base_dir, f"orbits__{rp_token}__{m_token}.parquet")
+    try:
+        frames = []
+        for nm in body_names:
+            n = len(logs[nm]["t"])
+            if n == 0:
+                continue
+            disp = logs[nm].get("disp_helio_AU") or [np.nan] * n
+            frames.append(pd.DataFrame({
+                "body": nm,
+                "t_days": np.asarray(logs[nm]["t"], dtype="float64"),
+                "x_au": np.asarray(logs[nm]["x"], dtype="float32"),
+                "y_au": np.asarray(logs[nm]["y"], dtype="float32"),
+                "z_au": np.asarray(logs[nm]["z"], dtype="float32"),
+                "vx": np.asarray(logs[nm]["vx"], dtype="float32"),
+                "vy": np.asarray(logs[nm]["vy"], dtype="float32"),
+                "vz": np.asarray(logs[nm]["vz"], dtype="float32"),
+                "disp_helio_au": np.asarray(disp, dtype="float32"),
+            }))
+        if not frames:
+            print("(Parquet write skipped: no logged rows)")
+            return
+        df = pd.concat(frames, ignore_index=True)
+        df["body"] = df["body"].astype("category")
+        df.to_parquet(path, compression="zstd", index=False)
+        mb = path.stat().st_size / 1e6
+        print(f"Parquet written: {path} ({mb:.1f} MB, {len(df):,} rows)")
+    except Exception as e:
+        print(f"(Parquet write skipped: {e})")
 
 
 def write_excel(base_dir: Path, params: dict, logs: dict, body_names):
@@ -1657,6 +1729,7 @@ def run_one(params, sub_dir: Path, params_src_path: Path):
         epoch_dt_utc=parse_epoch_utc(params["epoch"]),  # or however you already pass it
         write_npz=write_npz,
         sim_baseline=sim_baseline,
+        params_for_cadence=params,
     )
 
     # Belt AFTER
@@ -1684,7 +1757,16 @@ def run_one(params, sub_dir: Path, params_src_path: Path):
         print("[belt] n_belt=0 → skipping belt figures")
 
     # Excel + heliocentric plots
-    write_excel(sub_dir, params, logs, BODY_NAMES)
+    # Trajectory output format. "parquet" (default) writes ~5x less and is what
+    # the analysis scripts read; "xlsx" is the legacy path; "both" writes each.
+    fmt = str(params.get("orbits_format", "parquet")).lower()
+    if fmt in ("parquet", "both"):
+        write_orbits_parquet(sub_dir, params, logs, BODY_NAMES)
+    if fmt in ("xlsx", "excel", "both"):
+        write_excel(sub_dir, params, logs, BODY_NAMES)
+    if fmt not in ("parquet", "xlsx", "excel", "both"):
+        raise ValueError(
+            f"orbits_format must be 'parquet', 'xlsx' or 'both'; got {fmt!r}")
 
     # BH RA/Dec Excel
     write_bh_radec_excel(sub_dir, params, bh_radec)

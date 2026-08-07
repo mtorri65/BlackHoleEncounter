@@ -42,9 +42,17 @@ script either consumes its output files or duplicates a fragment of its logic. I
   v-infinity, inclination, longitude of ascending node, argument of periapsis, time-of-
   periapsis offset — each optionally given as a `min,max,step` sweep range — plus
   integration and output-writing settings.
-- Initializes the Sun and planets from a Skyfield JPL ephemeris (de440s) at a UTC epoch;
-  the Moon is added as a simplified fixed offset from Earth, not a real lunar ephemeris.
+- Initializes the Sun, planets and Moon from a Skyfield JPL ephemeris (de440s) at a UTC
+  epoch. The Moon used to be a synthetic fixed offset from Earth with an orbital velocity
+  but no compensating change to Earth's — which injected ~12.4 m/s of spurious momentum
+  and stretched Earth's year to 365.570 days. Runs made before that fix (all of
+  `simulations/20260724_230314`) carry a seasonal drift of +0.33 d/yr; see the docstring
+  of `plot_local_sky.py`.
 - Integrates with REBOUND's IAS15 adaptive integrator.
+- Logs the trajectory at `output_interval_days`, optionally at two rates: setting
+  `output_dense_window_days` logs every `output_dense_interval_days` within that many days
+  of `bh_tperi_offset_days` and at the coarse rate elsewhere. The dynamics are confined to
+  a few years around periapsis, so 1-day/30-day cuts output ~20x with no loss.
 - Sweeps the full Cartesian product of any BH parameter ranges (`itertools.product`),
   writing one output subfolder per parameter combination — wide ranges produce many runs.
 - Can resume an interrupted sweep via `--resume-dir`.
@@ -63,7 +71,13 @@ with every file prefixed by the subfolder name:
 - `__input.yaml` — copy of the config used for that run
 - `__archive.bin` — REBOUND SimulationArchive (only if `archive_enable: true`)
 - `snapshot_<t>.npz` — per-body Cartesian state per dump (only if `write_npz: true`)
-- `__orbits__<rp>__<mass>.xlsx` — per-body position/velocity/tidal-accel time series
+- `__orbits__<rp>__<mass>.parquet` — per-body position/velocity time series, long
+  format (`body, t_days, x_au, y_au, z_au, vx, vy, vz, disp_helio_au`, float32).
+  The default since the `orbits_format` option was added; the same schema
+  `convert_orbits_to_parquet.py` produces from older sweeps (as `orbits.parquet`).
+- `__orbits__<rp>__<mass>.xlsx` — the legacy form of the same log, with derived
+  columns and `_str` duplicates. Only written for `orbits_format: xlsx` or `both`.
+  Roughly 5x larger; a full 672-run sweep at 1-day cadence came to 150 GB.
 - `__bh_radec__<rp>__<mass>.xlsx` — BH geocentric RA/Dec track, feeds the Gaia analysis scripts
 - `__planets_run_deltas.csv`, `__belt_run_before/after.csv` — orbital elements before/after
 - `uncertainties/uncertainty_input__<body>__*.csv` — feeds `estimate_BH_parameters_uncertainties*.py`

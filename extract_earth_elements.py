@@ -27,11 +27,16 @@ Validation: applied to t=0 this recovers lambda_p = 282.3 deg at the 1873 epoch
 (present-day value is ~283 deg) and reproduces the CSV's a_before / e_before to
 five decimals.
 
-Speed
------
-The orbits workbooks are ~220 MB each and only the first and last rows are
-needed, so the sheet XML is stream-decompressed directly out of the xlsx zip and
-only the head/tail bytes are retained -- ~30x faster than a full openpyxl scan.
+Input formats
+-------------
+Reads a run's Parquet trajectory log if it has one -- native output since engine
+v26, or generated from an older sweep by ``convert_orbits_to_parquet.py`` -- and
+falls back to the legacy ``*__orbits__*.xlsx`` workbook otherwise.
+
+The workbook path is slow by nature: ~220 MB each, of which only the first and
+last rows are needed, so the sheet XML is stream-decompressed straight out of the
+xlsx zip and only the head/tail bytes are kept -- ~30x faster than a full
+openpyxl scan, and still far slower than reading two columns of Parquet.
 
 Usage
 -----
@@ -154,18 +159,49 @@ def elements_from_state(r: np.ndarray, v: np.ndarray) -> dict:
     return {"a_au": a, "ecc": ecc, "obliquity_deg": eps, "lon_perihelion_deg": lam_p}
 
 
+def _head_tail_parquet(path: Path):
+    """(first, last) [t,x,y,z,vx,vy,vz] rows for Earth and Sun from a Parquet log.
+
+    Since engine v26 the trajectory log is written as long-format Parquet
+    (``body, t_days, x_au, ...``) rather than a workbook; ``convert_orbits_to_-
+    parquet.py`` produces the identical schema from older sweeps. Only the
+    endpoints are needed, so the frame is filtered to the two bodies first.
+    """
+    d = pd.read_parquet(
+        path, columns=["body", "t_days", "x_au", "y_au", "z_au", "vx", "vy", "vz"])
+    out = {}
+    for name in ("Earth", "Sun"):
+        g = d[d["body"] == name].sort_values("t_days")
+        if g.empty:
+            return None
+        v = g[["t_days", "x_au", "y_au", "z_au", "vx", "vy", "vz"]].to_numpy(dtype=float)
+        out[name] = (v[0].tolist(), v[-1].tolist())
+    return out
+
+
 def process_run(run_dir: Path) -> dict | None:
-    """Extract Earth's before/after elements for one run folder."""
-    matches = list(run_dir.glob("*__orbits__*.xlsx"))
-    if not matches:
+    """Extract Earth's before/after elements for one run folder.
+
+    Reads whichever trajectory log the run has: Parquet if present (native since
+    engine v26, or produced by the converter), otherwise the legacy workbook.
+    """
+    pq = list(run_dir.glob("*orbits*.parquet")) or list(run_dir.glob("orbits.parquet"))
+    xl = list(run_dir.glob("*__orbits__*.xlsx"))
+    if not pq and not xl:
         return None
     try:
-        with zipfile.ZipFile(matches[0]) as z:
-            smap = _sheet_map(z)
-            if "Earth" not in smap or "Sun" not in smap:
+        if pq:
+            got = _head_tail_parquet(pq[0])
+            if got is None:
                 return None
-            e_first, e_last = _head_tail_rows(z, smap["Earth"])
-            s_first, s_last = _head_tail_rows(z, smap["Sun"])
+            (e_first, e_last), (s_first, s_last) = got["Earth"], got["Sun"]
+        else:
+            with zipfile.ZipFile(xl[0]) as z:
+                smap = _sheet_map(z)
+                if "Earth" not in smap or "Sun" not in smap:
+                    return None
+                e_first, e_last = _head_tail_rows(z, smap["Earth"])
+                s_first, s_last = _head_tail_rows(z, smap["Sun"])
     except Exception as exc:                      # noqa: BLE001 - report, don't abort sweep
         return {"run": run_dir.name, "error": f"{type(exc).__name__}: {exc}"}
 

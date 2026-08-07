@@ -16,21 +16,39 @@ This is a real assumption, not a formality: it means the *date* of an event is
 simulated but the *time of night* is reconstructed. It would break for a body
 close enough to raise meaningful tides, which is not the case here.
 
-A calendar drift you must know about
-------------------------------------
-Earth's orbital period in these runs is **365.570 days**, not the sidereal
-365.256. Over the 154 years from the 1873 epoch that accumulates: the simulated
-northern solstice lands on 20 June in 1874 (correct), 29 June by 1900, 31 July by
-2000 and **9 August by 2026** -- a drift of about **+0.33 days/year, reaching
-~49 days**.
+Calendar drift: check which sweep your run came from
+----------------------------------------------------
+The date a plot is labelled with and the season it actually shows can disagree,
+because the simulated year is not exactly the real one. How badly depends on when
+the run was produced.
 
-So the simulation's *seasons* have slipped roughly seven weeks relative to its
-own calendar labels. A plot for "2027-09-15" shows the solar geometry of about
-28 July. Everything here is internally self-consistent -- the Sun position used
-for the day/night shading is the simulated one -- but it is **not** what an
-observer would see on that calendar date on the real Earth.
+**Runs from before the Moon fix (engine commit be8cba8) -- includes the whole
+``simulations/20260724_230314`` sweep.** The Moon was added at a fixed offset from
+Earth with an orbital velocity, but Earth's velocity was never adjusted to
+compensate, so the Earth-Moon pair started with ~12.4 m/s of spurious momentum.
+That put Earth's semi-major axis at 1.00059 AU instead of 1.000018 and its year at
+**365.570 days**. Over the 154 years from the 1873 epoch the simulated northern
+solstice walks from 20 June in 1874 (correct) to 29 June by 1900, 31 July by 2000
+and **9 August by 2026** -- about **+0.33 days/year, reaching ~49 days**. A plot
+labelled "2027-09-15" from such a run shows the solar geometry of roughly 28 July.
 
-This does not affect ``plot_sky_tracks.py``: RA/Dec are inertial and carry no
+**Runs from after the fix**, which reads the real Moon from the ephemeris, have a
+correct orbit. The measured tropical year is then 365.2563 d against the true
+365.2422: a residual of **+0.0141 days/year, about +4.4 days over the full 308-year
+span** -- roughly a fifth of a solar-disc diameter's worth of seasonal phase, and
+below the resolution of anything plotted here.
+
+That residual is not an error left over from the fix. 0.0141 d/yr is 20.4
+minutes/yr, which is exactly the 50.3 arcsec/yr precession of the equinoxes. A
+point-mass integration applies no torque to Earth's spin axis, so the axis never
+precesses and "seasons" repeat on the *sidereal* year rather than the tropical
+one. It is irreducible in this model, and small enough not to matter.
+
+Either way the plot is internally self-consistent -- the Sun position used for the
+day/night shading is the simulated one. The caveat is only about mapping it onto a
+real-world calendar date.
+
+None of this affects ``plot_sky_tracks.py``: RA/Dec are inertial and carry no
 calendar dependence. It bites only once a site on a rotating Earth is involved,
 because that ties the inertial sky to a date.
 
@@ -41,9 +59,12 @@ What is and is not included
 * **Light-time, aberration, refraction, nutation and polar motion** are not.
   Refraction alone reaches ~35 arcmin at the horizon, so altitudes near 0 deg
   are approximate.
-* Positions between the simulation's daily samples are linearly interpolated.
-  Fine for everything here except a body moving fast at closest approach, where
-  the daily cadence is itself the limit.
+* Positions between the simulation's samples are linearly interpolated. Fine at
+  the 1-day cadence, except for a body moving fast at closest approach where the
+  cadence is itself the limit. **Check the cadence of your run first**: sweeps
+  using ``output_dense_window_days`` log every 30 days away from the encounter,
+  and linear interpolation across 30 days of orbital motion is meaningless. This
+  script is only valid inside the dense window.
 
 Usage
 -----
