@@ -209,6 +209,12 @@ class EBM:
         model = str(self.cfg.olr_model).lower()
         if model == "linear":
             return self.cfg.olr_A + self.cfg.olr_B * np.asarray(T, dtype=float)
+        if model == "graygas":
+            # Pressure-dependent greenhouse; the base class has no atmosphere,
+            # so this is only meaningful in a subclass that tracks pressure.
+            T_K = np.maximum(np.asarray(T, dtype=float) + KELVIN, 1.0)
+            tau = self._graygas_tau()
+            return SIGMA_SB * T_K ** 4 / (1.0 + 0.75 * tau)
         if model in ("sellers", "graybody"):
             # Clamp to a small positive absolute temperature: the explicit
             # source can transiently probe unphysical values during spin-up.
@@ -218,7 +224,11 @@ class EBM:
             return SIGMA_SB * T_K ** 4 * (
                 1.0 - self.cfg.sellers_m * np.tanh(19.0 * T_K ** 6 * 1e-16))
         raise ValueError(f"Unknown olr_model {self.cfg.olr_model!r}; "
-                         "expected 'linear', 'sellers' or 'graybody'.")
+                         "expected 'linear', 'sellers', 'graybody' or 'graygas'.")
+
+    def _graygas_tau(self) -> float:
+        """Grey-gas optical depth. Constant here; pressure-dependent in MarsEBM."""
+        return float(self.cfg.graygas_tau_ref)
 
     def insolation(self, M: float) -> np.ndarray:
         """Daily-mean insolation Q(x) at orbital mean anomaly ``M`` [rad]."""

@@ -86,6 +86,8 @@ class MarsEBM(EBM):
         self.frost_coalbedo = 1.0 - float(config.co2_frost_albedo)
         # Frost present at the current step; consulted by coalbedo().
         self._m_frost = np.zeros(self.n)
+        # Surface pressure at the current step; consulted by _graygas_tau().
+        self._p_now = self.surface_pressure(self._m_frost)
 
     # ------------------------------------------------------------------
     # Atmospheric state
@@ -148,6 +150,23 @@ class MarsEBM(EBM):
         bare = self.cfg.coalbedo_a0 + self.cfg.coalbedo_a2 * P2
         return np.where(self._m_frost > 0.0, self.frost_coalbedo, bare)
 
+    def _graygas_tau(self) -> float:
+        """Grey-gas optical depth at the current surface pressure.
+
+        tau = tau_ref * (p / p_ref), so a planet whose caps sublimate develops a
+        real greenhouse. This closes a feedback the fixed-emissivity model could
+        not express:
+
+            warmer -> caps sublimate -> higher pressure -> stronger greenhouse
+                   -> warmer
+
+        which is positive, and therefore capable of producing a tipping point in
+        the same way the ice-albedo feedback does. Only meaningful when the CO2
+        inventory is large enough for pressure to move appreciably.
+        """
+        p_ref = max(float(self.cfg.graygas_p_ref_pa), 1e-9)
+        return float(self.cfg.graygas_tau_ref) * self._p_now / p_ref
+
     # ------------------------------------------------------------------
     # Time integration
     # ------------------------------------------------------------------
@@ -160,6 +179,7 @@ class MarsEBM(EBM):
         deficit into latent heat and mass.
         """
         self._m_frost = m_frost                    # seen by coalbedo()
+        self._p_now = self.surface_pressure(m_frost)   # seen by _graygas_tau()
         T_pred = super().step(T, M)                # radiation + transport + diffusion
         m = m_frost.copy()
 
@@ -204,6 +224,10 @@ class MarsEBM(EBM):
         prev_T = self.global_mean(T)
         prev_m = float(np.mean(m))
         drift_T = drift_m = np.inf
+        # Frost tolerance scales with the inventory; an absolute one would be
+        # tight for a thin atmosphere and meaningless for a thick one.
+        m_tol = max(self.cfg.co2_spinup_tol_frac * self.inventory, 1e-12)
+        streak = 0
         years = 0
         for years in range(1, self.cfg.spinup_max_years + 1):
             for _ in range(n_steps):
@@ -212,9 +236,15 @@ class MarsEBM(EBM):
             cur_T, cur_m = self.global_mean(T), float(np.mean(m))
             drift_T, drift_m = abs(cur_T - prev_T), abs(cur_m - prev_m)
             prev_T, prev_m = cur_T, cur_m
-            if drift_T < self.cfg.spinup_tol_degC and drift_m < 1e-3:
-                break
-        return T, m, M, {"years": years, "drift_T": drift_T, "drift_m": drift_m}
+            if drift_T < self.cfg.spinup_tol_degC and drift_m < m_tol:
+                streak += 1
+                if streak >= self.cfg.spinup_consecutive:
+                    break
+            else:
+                streak = 0          # a creeping state never accumulates a streak
+        converged = streak >= self.cfg.spinup_consecutive
+        return T, m, M, {"years": years, "drift_T": drift_T, "drift_m": drift_m,
+                         "converged": converged}
 
     def run_year_co2(self, T: np.ndarray, m: np.ndarray, M0: float = 0.0):
         """Integrate one orbital year, recording temperature, frost and pressure."""

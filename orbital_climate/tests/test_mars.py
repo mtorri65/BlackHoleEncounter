@@ -258,3 +258,119 @@ def test_present_day_mars_is_recognisable():
     assert 500.0 < rec["pressure_Pa"].mean() < 700.0    # observed ~600 Pa
     swing = 1.0 - rec["pressure_Pa"].min() / rec["pressure_Pa"].max()
     assert 0.10 < swing < 0.40                          # observed ~25%
+
+
+# ---------------------------------------------------------------------------
+# Pressure-dependent greenhouse (olr_model = "graygas")
+# ---------------------------------------------------------------------------
+def test_graygas_olr_formula():
+    """OLR = sigma T^4 / (1 + 3 tau / 4), with tau scaling on surface pressure."""
+    SIG = 5.670374419e-8
+    cfg = mars_config(olr_model="graygas", graygas_tau_ref=0.2, graygas_p_ref_pa=600.0)
+    m = MarsEBM(cfg)
+    m._p_now = 600.0
+    assert m._graygas_tau() == pytest.approx(0.2)
+    T_c = np.array([-60.0, 0.0])
+    expected = SIG * (T_c + KELVIN) ** 4 / (1.0 + 0.75 * 0.2)
+    np.testing.assert_allclose(m.olr(T_c), expected, rtol=1e-12)
+    # Optical depth is linear in pressure.
+    m._p_now = 1200.0
+    assert m._graygas_tau() == pytest.approx(0.4)
+
+
+def test_graygas_reduces_to_blackbody_without_atmosphere():
+    """As the atmosphere vanishes the greenhouse must vanish with it."""
+    SIG = 5.670374419e-8
+    m = MarsEBM(mars_config(olr_model="graygas"))
+    m._p_now = 0.0
+    T_c = np.array([-60.0])
+    np.testing.assert_allclose(m.olr(T_c), SIG * (T_c + KELVIN) ** 4, rtol=1e-12)
+
+
+def test_greenhouse_calibrated_to_present_day_mars():
+    """graygas must warm present-day Mars by ~5 K relative to a bare blackbody."""
+    cold = MarsEBM(mars_config(olr_model="graybody"))
+    warm = MarsEBM(mars_config(olr_model="graygas"))
+    means = []
+    for m in (cold, warm):
+        T, f, M, _ = m.spin_up_co2()
+        T, f, M, rec = m.run_year_co2(T, f, M0=M)
+        means.append(float(rec["T"].mean()))
+    assert 3.0 < means[1] - means[0] < 8.0
+
+
+def test_thicker_inventory_warms_the_planet():
+    """The feedback the fixed-emissivity model could not express.
+
+    More CO2 -> higher pressure -> stronger greenhouse -> warmer -> less
+    condensation -> higher pressure still. Only present with graygas; with a
+    fixed emissivity a larger inventory does almost nothing.
+    """
+    def mean_T(inventory, model):
+        m = MarsEBM(mars_config(olr_model=model, co2_inventory_kg_m2=inventory))
+        T, f, M, _ = m.spin_up_co2()
+        T, f, M, rec = m.run_year_co2(T, f, M0=M)
+        return float(rec["T"].mean())
+
+    thin_gas, thick_gas = mean_T(200.0, "graygas"), mean_T(1000.0, "graygas")
+    assert thick_gas - thin_gas > 10.0            # strong response
+
+    thin_bb, thick_bb = mean_T(200.0, "graybody"), mean_T(1000.0, "graybody")
+    assert abs(thick_bb - thin_bb) < 5.0          # fixed emissivity: barely responds
+
+
+def test_atmospheric_collapse_is_bistable():
+    """Two stable climates at identical forcing, decided by the starting state.
+
+    The window is narrow -- s = 0.72-0.73 at this inventory, about 1.4% of
+    insolation -- so the test targets it directly. It must also start from
+    genuinely opposite states: a warm start with condensed frost simply
+    sublimates it and lands on the thick branch, which is how an earlier version
+    of this test managed to find no bistability at all.
+    """
+    n = 45
+    cfg = mars_config(olr_model="graygas", co2_inventory_kg_m2=1000.0,
+                      S0=1361.0 * 0.72, n_lat=n,
+                      spinup_max_years=400, spinup_tol_degC=1e-4)
+    m = MarsEBM(cfg)
+
+    def settle(T0, m0):
+        T, f, M, info = m.spin_up_co2(T0=T0, m0=m0)
+        T, f, M, rec = m.run_year_co2(T, f, M0=M)
+        assert info["converged"], "spin-up did not converge; the result is a transient"
+        return float(rec["T"].mean()), float(rec["pressure_Pa"].mean())
+
+    T_thick, p_thick = settle(np.full(n, -20.0), np.zeros(n))          # warm, airborne
+    T_thin, p_thin = settle(np.full(n, -110.0), np.full(n, 1000.0))    # cold, condensed
+
+    assert T_thick - T_thin > 10.0        # genuinely different equilibria
+    assert p_thick > 5.0 * p_thin         # one thick, one collapsed
+
+
+def test_bistable_window_is_narrow():
+    """Outside a ~1.4% window the equilibrium is unique.
+
+    Guards against the failure that produced a spurious 15%-wide loop: a chained
+    insolation ramp whose spin-up stopped on a slowly re-inflating atmosphere.
+    """
+    n = 45
+    for s in (0.65, 0.80):
+        cfg = mars_config(olr_model="graygas", co2_inventory_kg_m2=1000.0,
+                          S0=1361.0 * s, n_lat=n,
+                          spinup_max_years=400, spinup_tol_degC=1e-4)
+        m = MarsEBM(cfg)
+        means = []
+        for T0, m0 in ((np.full(n, -20.0), np.zeros(n)),
+                       (np.full(n, -110.0), np.full(n, 1000.0))):
+            T, f, M, info = m.spin_up_co2(T0=T0, m0=m0)
+            T, f, M, rec = m.run_year_co2(T, f, M0=M)
+            assert info["converged"]
+            means.append(float(rec["T"].mean()))
+        assert abs(means[0] - means[1]) < 1.0
+
+
+def test_spinup_reports_convergence():
+    """A spin-up that hits its year cap must say so rather than imply success."""
+    m = MarsEBM(mars_config(spinup_max_years=1, spinup_consecutive=3))
+    _, _, _, info = m.spin_up_co2()
+    assert info["converged"] is False

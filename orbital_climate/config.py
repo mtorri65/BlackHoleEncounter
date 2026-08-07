@@ -70,6 +70,20 @@ class Config:
     # 1.00, Earth would need ~0.60.
     olr_emissivity: float = 1.0
 
+    # --- olr_model = "graygas": pressure-dependent greenhouse ---
+    # Grey-gas atmosphere in radiative equilibrium:
+    #     OLR = sigma T^4 / (1 + 3 tau / 4),    tau = tau_ref * (p / p_ref)
+    # Unlike "graybody" this responds to atmospheric mass, so a planet whose
+    # caps sublimate develops a real greenhouse. tau_ref = 0.1316 reproduces
+    # Mars's observed ~5 K greenhouse at 600 Pa.
+    #
+    # Only meaningful together with a CO2 inventory large enough for the
+    # pressure to move: at the default 200 kg/m^2 the ceiling is 742 Pa (1.24x
+    # today) and the greenhouse varies by under 1 K, so the two settings are
+    # one physical assumption rather than two.
+    graygas_tau_ref: float = 0.1316
+    graygas_p_ref_pa: float = 600.0
+
     # Simpson-Nakajima ceiling: the maximum OLR a moist atmosphere can sustain
     # (Nakajima, Hayashi & Abe 1992). If the absorbed flux exceeds it there is
     # *no* equilibrium -- the planet enters a runaway greenhouse. This is used as
@@ -119,6 +133,21 @@ class Config:
     # pressures reported from that state describe nothing. Detected and flagged
     # rather than clamped, for the same reason as the Simpson-Nakajima runaway.
     co2_collapse_threshold: float = 0.01
+    # Spin-up convergence for the frost field, as a *fraction of the inventory*
+    # per year. An absolute threshold is meaningless when the inventory ranges
+    # over orders of magnitude: 1e-3 kg/m^2/yr is tight against 200 kg/m^2 and
+    # useless against 1000, where it will declare convergence on an atmosphere
+    # that is still visibly re-inflating.
+    # 1e-5 of the inventory per year. Tighter than this sits below the
+    # year-to-year numerical noise on the cap mass (~1e-3 kg/m^2 at a 1000
+    # kg/m^2 inventory), making convergence unreachable on the collapsed branch
+    # -- which reads as "did not converge" when the state is in fact stable to
+    # five significant figures over 2000 years.
+    co2_spinup_tol_frac: float = 1e-5
+    # Consecutive years that must satisfy both criteria. A slowly creeping state
+    # can meet a per-year tolerance indefinitely; requiring several in a row
+    # catches that.
+    spinup_consecutive: int = 3
     n_lat: int = 180                # number of latitude cells (cell-centred in x=sin(phi))
 
     # Latitude at which the seasonal peak/trough temperature and peak insolation
