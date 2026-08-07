@@ -16,6 +16,12 @@ Differences from the Earth driver, all physical rather than structural:
 * **CO2 condensation.** The headline diagnostics are the seasonal pressure
   swing and cap mass, which have no Earth analogue.
 
+All temperatures reported here are **daily means**. Mars's real diurnal range is
+60-100 K -- far larger than Earth's, because its thermal skin depth is
+centimetres rather than an ocean mixed layer -- so daily maxima can exceed these
+values substantially. The diurnal cycle is outside this model's scope, which
+matters most for any threshold diagnostic sitting near a phase boundary.
+
 Usage
 -----
     python climate_mars_from_simulations.py simulations/<STAMP> --workers 5
@@ -32,7 +38,7 @@ import numpy as np
 import pandas as pd
 
 from orbital_climate.config import Config, load_config
-from orbital_climate.mars import MarsEBM
+from orbital_climate.mars import MarsEBM, liquid_water_possible
 
 STEPS_PER_YEAR = 180
 KELVIN = 273.15
@@ -79,9 +85,17 @@ def _evaluate(base_dict: dict, row: dict) -> dict:
         # Fraction of the atmosphere cycling in and out of the caps each year.
         "pressure_swing_frac": float(1.0 - p.min() / p_max) if p_max > 0 else np.nan,
         "peak_cap_kg_m2": float(rec["m_frost"].max()),
-        # Fraction of the year the equator is above the melting point of water.
+        # Fraction of the year the equator is above 273 K. On its own this is
+        # NOT a statement about liquid water: Mars sits essentially on water's
+        # triple point (611.657 Pa), so below that pressure ice sublimates
+        # directly to vapour however warm the surface gets. Kept as a bare
+        # temperature diagnostic; use the column below for habitability.
         "frac_year_equator_above_273K": float(
             np.mean(rec["T"][:, i_eq] + KELVIN > 273.15)),
+        # Both conditions together: T above the triple-point temperature AND p
+        # above the triple-point pressure. Necessary, not sufficient.
+        "frac_year_liquid_water_possible": float(np.mean(
+            liquid_water_possible(rec["T"][:, i_eq] + KELVIN, rec["pressure_Pa"]))),
         "spinup_years": int(info["years"]),
         "S_mean_Wm2": cfg.S0 / (4.0 * cfg.a_au ** 2 * np.sqrt(1.0 - cfg.ecc ** 2)),
         # Atmospheric collapse: the fraction of the year spent with the CO2
@@ -164,8 +178,15 @@ def main() -> int:
             print(f"  {lab:28s} median {s.median():9.2f}  "
                   f"5th {s.quantile(.05):9.2f}  95th {s.quantile(.95):9.2f}  [{unit}]")
         warm = int((ok["frac_year_equator_above_273K"] > 0).sum())
-        print(f"\n  runs where the equator exceeds 273 K at some point: {warm} "
+        wet = int((ok["frac_year_liquid_water_possible"] > 0).sum())
+        print(f"\n  equator above 273 K at some point           : {warm} "
               f"({100 * warm / len(ok):.0f}%)")
+        print(f"  ...AND above water's triple-point pressure : {wet} "
+              f"({100 * wet / len(ok):.0f}%)")
+        if warm > wet:
+            print(f"    -> {warm - wet} of those are above freezing at a pressure "
+                  "where liquid")
+            print("       water cannot exist; ice sublimates straight to vapour.")
         if "atmosphere_collapsed" in ok.columns:
             coll = int(ok["atmosphere_collapsed"].sum())
             perm = int(ok["permanently_collapsed"].sum())

@@ -53,6 +53,28 @@ _A_SVP = 1.382e12
 _B_SVP = 3182.48
 _LN_A = float(np.log(_A_SVP))
 
+# Triple point of water. Mars's mean surface pressure (~610 Pa) sits essentially
+# *on* it, which is why a bare temperature threshold is not a statement about
+# liquid water: below 611.657 Pa, ice sublimates directly to vapour however warm
+# the surface gets.
+WATER_TRIPLE_P_PA = 611.657
+WATER_TRIPLE_T_K = 273.16
+
+
+def liquid_water_possible(T_K, p_pa) -> np.ndarray | bool:
+    """Whether liquid water is thermodynamically permitted.
+
+    Requires *both* T above the triple-point temperature and p above the
+    triple-point pressure. On Mars the pressure condition is the binding one and
+    is easy to forget: a temperature-only test reports "above freezing" for
+    worlds on which liquid water cannot exist at all.
+
+    This is a necessary condition, not a sufficient one -- it ignores the
+    saturation vapour pressure of water itself, evaporative cooling, and the
+    complete absence of a water cycle in this model.
+    """
+    return (np.asarray(T_K) > WATER_TRIPLE_T_K) & (np.asarray(p_pa) > WATER_TRIPLE_P_PA)
+
 
 def co2_frost_point_K(p_pa) -> np.ndarray | float:
     """CO2 frost-point temperature [K] at pressure ``p_pa`` [Pa]."""

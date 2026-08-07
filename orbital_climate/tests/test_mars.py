@@ -258,3 +258,28 @@ def test_present_day_mars_is_recognisable():
     assert 500.0 < rec["pressure_Pa"].mean() < 700.0    # observed ~600 Pa
     swing = 1.0 - rec["pressure_Pa"].min() / rec["pressure_Pa"].max()
     assert 0.10 < swing < 0.40                          # observed ~25%
+
+
+def test_liquid_water_requires_pressure_not_just_temperature():
+    """Mars sits on water's triple point, so temperature alone proves nothing.
+
+    A bare T > 273 K test reports "above freezing" for worlds where liquid water
+    is thermodynamically forbidden. Both conditions are required.
+    """
+    from orbital_climate.mars import (
+        liquid_water_possible, WATER_TRIPLE_P_PA, WATER_TRIPLE_T_K,
+    )
+    # Warm but too thin -- Mars's actual failure mode.
+    assert not liquid_water_possible(300.0, 400.0)
+    # Thick enough but frozen.
+    assert not liquid_water_possible(250.0, 900.0)
+    # Both satisfied.
+    assert liquid_water_possible(300.0, 900.0)
+    # Present-day Mars sits essentially on the boundary.
+    assert abs(WATER_TRIPLE_P_PA - 610.0) < 5.0
+    assert WATER_TRIPLE_T_K == pytest.approx(273.16)
+    # Vectorised, since the driver applies it across a year of timesteps.
+    T = np.array([300.0, 300.0, 250.0])
+    p = np.array([900.0, 400.0, 900.0])
+    np.testing.assert_array_equal(liquid_water_possible(T, p),
+                                  np.array([True, False, False]))
