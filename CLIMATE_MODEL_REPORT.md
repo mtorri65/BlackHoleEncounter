@@ -724,6 +724,9 @@ freezing for a median 22% of the year.
 
 ### 7.7 A worked scenario
 
+*Examined in full in [`SCENARIO_mercury_capture.md`](SCENARIO_mercury_capture.md),
+including the habitability analysis and its sensitivities.*
+
 Run `…rp0p5__vinf25__inc30__…Om0__om0` — chosen because it is the one case in
 the sweep where **Mercury is captured by the black hole** (a = 0.128 AU, e = 0.251,
 53-day period, departing at 820 AU). In the same run:
