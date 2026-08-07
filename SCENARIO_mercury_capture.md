@@ -16,6 +16,9 @@ results. Physically there is one scenario, recorded twice.
 
 ---
 
+*A narrative century-scale account of the same scenario, 1977-2077, is in
+[`SCENARIO_timeline.md`](SCENARIO_timeline.md).*
+
 ## 1. The encounter
 
 | Parameter | Value |
