@@ -80,6 +80,10 @@ PLANET_MASSES_MSUN = {
     "jupiter": 9.5479e-4, "saturn": 2.8585e-4, "uranus": 4.3662e-5, "neptune": 5.1513e-5,
 }
 
+# Moon, in solar masses (7.342e22 kg / 1.98892e30 kg). Kept out of the planet
+# table because it is not sourced from PLANET_MASSES_MSUN's loop.
+MOON_MASS_MSUN = 3.6923e-8
+
 # Skyfield targets (de440s: inner planets as centers, outers as barycenters)
 SKYFIELD_KEYS = {
     "sun": "sun",
@@ -417,19 +421,39 @@ def build_sim(params):
             name=nm.capitalize(),  # Mercury, Venus, Earth, ...
         )
 
-    # Moon (simple approx in Earth's orbital plane / near it)
-    earth_idx = order.index("earth") + 1
-    earth = get_particle(sim, "Earth", fallback_index=earth_idx)
-    moon_r_au = 384400.0 / AU_KM
+    # --- Moon ---------------------------------------------------------
+    # Taken from the ephemeris, like every other body.
+    #
+    # This previously used a synthetic Moon: a fixed 384 400 km offset along +x
+    # with a 1.02 km/s kick along +y, and *no* compensating change to Earth's
+    # velocity. That does not conserve momentum. The Earth-Moon pair gained
+    #
+    #     (m_moon / M_total) * dv = 0.0123 * 1.02 km/s = 12.4 m/s
+    #
+    # of spurious orbital velocity, so while Skyfield's Earth was placed
+    # correctly at a = 0.99982 AU, the barycentre that actually orbits the Sun
+    # started at a = 1.00060 AU. Since da/a ~ 2 dv/v, that inflated Earth's
+    # orbit by ~8e-4 and lengthened its year from 365.256 to 365.570 days --
+    # which compounds into a ~49-day drift of the seasons against the calendar
+    # by 2026, and a ~0.3 day/yr drift thereafter.
+    #
+    # The synthetic Moon was also at an arbitrary orbital phase, which is a
+    # second error: Earth's ephemeris velocity already contains its real wobble
+    # about the true barycentre, pointing somewhere the synthetic Moon does not.
+    #
+    # de440s contains the Moon, so both problems disappear by reading it. Earth
+    # and Moon then come from the same ephemeris and are mutually consistent by
+    # construction.
+    r_moon, v_moon = heliocentric_state("moon")
     sim.add(
-        m=3.694e-8,
-        x=earth.x + moon_r_au,
-        y=earth.y,
-        z=earth.z,
-        vx=earth.vx,
-        vy=earth.vy + 0.00059,
-        vz=earth.vz,
-        name="Moon"
+        m=MOON_MASS_MSUN,
+        x=r_moon[0],
+        y=r_moon[1],
+        z=r_moon[2],
+        vx=v_moon[0],
+        vy=v_moon[1],
+        vz=v_moon[2],
+        name="Moon",
     )
 
     # Black hole on hyperbolic approach relative to Sun
