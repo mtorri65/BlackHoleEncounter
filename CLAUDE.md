@@ -124,10 +124,13 @@ could have seen the BH approaching, and inverts that into the `bh_vinf_kms` a sc
 needs. Its BH-orbit construction deliberately mirrors the engine's, sign conventions
 included; the derived assumptions live in `SCENARIO_2047_assumptions.md`.
 
-Note when reading any single run's geometry: the engine's true argument of periapsis is
-`bh_omega_deg` + 180°, because it builds the state with a negative `r` and then negates
-the velocity (`# inbound branch`). Harmless for sweeps — {0, 90, 180, 270} is closed
-under +180° — but it matters if you interpret one named run.
+Note when reading any single run's geometry: the engine builds the BH state with a
+negative `r` and then negates the velocity (`# inbound branch`), so the orbit is the
+point inversion of what its labels describe — same plane, same `i`, `Ω`, `rp`, `e` and
+arrival time, but periapsis on the opposite side (true ω = `bh_omega_deg` + 180° for
+labelled `i ≥ 0`). Harmless for sweeps, since {0, 90, 180, 270} is closed under +180°,
+and harmless for relative claims between runs; it matters only for absolute geometric
+statements about one named run. See §7 of `SCENARIO_2047_assumptions.md`.
 
 ### Particle lookup pattern
 

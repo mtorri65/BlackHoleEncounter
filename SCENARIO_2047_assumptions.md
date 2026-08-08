@@ -258,28 +258,63 @@ speed is 2.1 km/s while the BH moves at 10.2 — nearly five times escape. The
 
 ## 7. Engine convention discovered while checking this
 
-The BH's argument of periapsis is offset by 180° from its label.
-`solar_system_bh_rebound26.py` writes `r = a(e cosh F − 1)` with `a < 0`, so `r`
-is negative and the position comes out antipodal; it then applies
-`v_bh = -(R @ v_pqw)  # inbound branch` to make the state consistent again. The
-net effect is the whole orbit rotated 180° in its plane.
+**The BH's orbit is the point inversion of the orbit its labels describe:**
+r → −r, v → −v. Verified exact to machine precision against a textbook
+construction, at i = 0°, ±30°, −60° and 75°.
 
-Measured from the eccentricity vector of the engine's own initial state, with
-Ω = i = 0:
+The cause is two lines in `solar_system_bh_rebound26.py`. The standard
+hyperbolic radius is `r = a(1 − e cosh F)` with `a < 0`, which is positive. The
+engine writes `r = a(e cosh F − 1)`, which has the right magnitude and the wrong
+sign, so the position comes out antipodal. It then applies
+`v_bh = -(R @ v_pqw)  # inbound branch` — the comment records that the BH was
+observed leaving rather than arriving, and the fix was to flip the velocity.
+Both vectors therefore end up negated.
 
-| `bh_omega_deg` | true periapsis direction |
+**Nothing is broken.** The two-body equation `r̈ = −μ r/|r|³` is odd in `r`, so
+if `r(t)` is a solution then so is `−r(t)`; point inversion maps orbits to
+orbits. Under it:
+
+- **h = r × v is unchanged** → the orbital plane, and hence `i` and `Ω`, are
+  exactly as labelled
+- **e_vec = (v × h)/μ − r̂ is negated** → periapsis lies on the opposite side
+- `a`, `e`, `rp`, `v_inf`, `|r|`, `|v|` and the time of periapsis are all as
+  requested
+
+So the encounter has the right plane, shape, size and timing. What differs is
+that the BH approaches from the opposite direction and rounds the far side of
+the Sun.
+
+In classical elements, for a labelled `i ≥ 0`, this reads **true ω =
+`bh_omega_deg` + 180°** — measured directly from the eccentricity vector of the
+engine's own initial state:
+
+| `bh_omega_deg` | true ω (at i = 30°, Ω = 45°) |
 |---:|---:|
 | 0 | 180° |
 | 90 | 270° |
-| 180 | 0° |
-| 270 | 90° |
 
-**True ω = `bh_omega_deg` + 180°.**
+For a *negative* labelled inclination the simple "+180°" no longer describes the
+extracted number, because standard element extraction independently remaps the
+plane: `i = −60°, Ω = 120°` comes back as `i = +60°, Ω = 300°`, and the `ω`
+bookkeeping tangles with that remapping. The vector statement — **h preserved,
+e_vec flipped** — is exact for every inclination and is the one to rely on.
 
-This is benign for the sweeps: {0, 90, 180, 270} is closed under +180°, so the
-set of orbits sampled is identical and only the per-run labels are permuted. It
-matters only when interpreting a *single named run's* geometry. Left unchanged
-deliberately — correcting it would silently relabel every existing run folder.
+**Benign for the sweeps.** The swept set {0, 90, 180, 270} is closed under
++180°, so the collection of orbits actually integrated is exactly the collection
+intended; only the labels are permuted (the folder named `om0` holds the ω = 180°
+orbit). Sweep statistics, the impact ranking and all climate results are
+unaffected. Relative claims between two runs also survive, since every run
+receives the same transformation — including the mirror-twin identity asserted in
+[`SCENARIO_mercury_capture.md`](SCENARIO_mercury_capture.md).
+
+**Where it bites:** any absolute geometric statement about a *single named run*
+— "in run `…om270` the BH approached from direction X". Note that plots reading
+positions out of the simulation output (`plot_sky_tracks.py`,
+`plot_local_sky.py`) show the true geometry and are correct; it is only the
+mapping from a folder's ω label to that geometry that is off.
+
+Left unchanged deliberately: correcting it would silently relabel every existing
+run folder.
 
 ---
 
