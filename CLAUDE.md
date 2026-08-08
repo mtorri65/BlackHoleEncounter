@@ -118,6 +118,17 @@ produced the expected files in the expected place.
 `time_dilation_tides.py` is a standalone physics illustration (Schwarzschild tidal/
 time-dilation effects near the BH) with no dependency on the rest of the pipeline.
 
+`astrometric_detectability.py` is standalone too — it runs its own paired N-body
+integrations rather than reading sweep output. It asks whether 19th-century astrometry
+could have seen the BH approaching, and inverts that into the `bh_vinf_kms` a scenario
+needs. Its BH-orbit construction deliberately mirrors the engine's, sign conventions
+included; the derived assumptions live in `SCENARIO_2047_assumptions.md`.
+
+Note when reading any single run's geometry: the engine's true argument of periapsis is
+`bh_omega_deg` + 180°, because it builds the state with a negative `r` and then negates
+the velocity (`# inbound branch`). Harmless for sweeps — {0, 90, 180, 270} is closed
+under +180° — but it matters if you interpret one named run.
+
 ### Particle lookup pattern
 
 Archive- and snapshot-based scripts use a hash-first, index-fallback pattern to look up
