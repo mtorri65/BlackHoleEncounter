@@ -28,11 +28,17 @@ results. Physically there is one scenario, recorded twice.
 | v∞ | 25 km/s |
 | Inclination | 30° |
 | Ω, ω | 0°, 0° |
-| Time of periapsis | 56 210 days after epoch (≈ 2027) |
+| Time of periapsis | 56 210 days after epoch (nominal 2027-07-26) |
 | Integration | 1873-09-01, 112 420 days (≈ 308 yr) |
 
-Gravitational focusing matters: at 0.5 AU periapsis the hole is moving at
-~67 km/s, so the encounter with the inner system lasts weeks, not years. From
+`bh_rp_au` and the time of periapsis describe the BH's *initial* two-body orbit,
+not the encounter it has. Measured from the output, this run's closest approach
+to the Sun is **0.637 AU on 19 August 2027** — outward and later than the 0.5 AU
+/ 26 July requested. See §8 of
+[`SCENARIO_2047_assumptions.md`](SCENARIO_2047_assumptions.md).
+
+Gravitational focusing matters: at its 0.637 AU periapsis the hole is moving at
+~61 km/s, so the encounter with the inner system lasts weeks, not years. From
 the climate model's point of view — where the ocean mixed layer responds over
 ~1.6 years — the orbital change is effectively **instantaneous**.
 

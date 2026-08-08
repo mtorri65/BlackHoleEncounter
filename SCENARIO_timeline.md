@@ -2,7 +2,9 @@
 
 A narrative timeline of the scenario in
 [`SCENARIO_mercury_capture.md`](SCENARIO_mercury_capture.md): a 0.1 M☉ black hole
-passing 0.5 AU from the Sun, reaching perihelion in **July 2027**.
+passing 0.637 AU from the Sun, reaching perihelion on **19 August 2027**.
+(0.5 AU is the *requested* periapsis; §8 of `SCENARIO_2047_assumptions.md`
+explains why the achieved value differs.)
 
 Every date and distance below is read from the simulation output. The framing is
 narrative; the numbers are not.
@@ -41,16 +43,18 @@ Past Saturn's distance. Two years remain.
 
 ### September 2026 · closest approach to Saturn, 6.35 AU
 
-The first of the encounters, and a distant one. Saturn is the only major body
-whose closest approach occurs *before* perihelion — a consequence of where it
-happens to sit in its orbit.
+The first of the encounters, and a distant one — and by a wide margin the
+earliest. Saturn, Venus (31 July 2027) and Jupiter (5 August) all reach closest
+approach *before* the hole reaches perihelion on 19 August; Earth, Mercury and
+Mars all do so after. Which side of perihelion a planet falls on is simply a
+matter of where it sits in its orbit as the hole sweeps through.
 
 ### Mid-2026 · 7.6 AU · Early 2027 · inside Jupiter's orbit
 
 Twelve months out. Gravitational focusing is now accelerating the hole hard: it
 covers the last 7 AU in a year, and will cover the final 1 AU in weeks.
 
-Even now the orbital elements have barely moved. **In May 2027 — two months
+Even now the orbital elements have barely moved. **In May 2027 — three months
 before perihelion — Earth's semi-major axis reads 0.999 AU and its eccentricity
 0.010.** The solar system is, on paper, still ordinary.
 
@@ -60,19 +64,27 @@ before perihelion — Earth's semi-major axis reads 0.999 AU and its eccentricit
 
 Everything happens in about four months.
 
-### July 2027 · perihelion, 0.89 AU · Venus at 0.059 AU
+### 31 July 2027 · Venus at 0.059 AU
 
-The black hole reaches its closest approach to the Sun — **0.89 AU, inside
-Earth's orbit** — moving at roughly 67 km/s.
+Venus passes within **0.059 AU** of the hole, about 15 times the Earth–Moon
+distance. Venus does not survive the encounter as a planet of the Sun: within
+weeks its heliocentric eccentricity exceeds 4, and it is gone.
 
-Venus passes within **0.059 AU** of it, about 15 times the Earth–Moon distance.
-Venus does not survive the encounter as a planet of the Sun: within weeks its
-heliocentric eccentricity exceeds 4, and it is gone.
+### August 2027 · Jupiter at 4.62 AU (5th) · perihelion, 0.637 AU (19th)
 
-### August 2027 · Jupiter at 4.62 AU
+Jupiter goes first, and distantly — though its mass means it perturbs the hole
+nearly as much as the reverse.
 
-Distant, and Jupiter's mass means it perturbs the hole nearly as much as the
-reverse.
+On **19 August** the black hole reaches its own closest approach to the Sun:
+**0.637 AU, well inside Earth's orbit**, moving at 61 km/s.
+
+That 0.637 AU is not the 0.5 AU this run requested, and the difference is not an
+error. `bh_rp_au` fixes the periapsis of the *initial two-body orbit* at the 1873
+epoch; across the 154-year infall the achieved closest approach drifts outward
+and late. Every run in this sweep does it, by a consistent amount — requested
+0.25 → 1.50 AU arrive at 0.385, 0.637, 0.878, 1.116, 1.355 and 1.594 AU, all
+22–24 days after the nominal date of 26 July. §8 of
+[`SCENARIO_2047_assumptions.md`](SCENARIO_2047_assumptions.md) has the details.
 
 ### September 2027 · Earth at 1.127 AU
 
@@ -84,9 +96,9 @@ The mechanism is not a close pass but a **differential tug**: the hole pulls the
 Sun and the Earth by different amounts in different directions, and what survives
 is the difference.
 
-### October 2027 · Mercury at 0.092 AU, Mars at 0.104 AU
+### October 2027 · Mercury at 0.092 AU (7th), Mars at 0.104 AU (11th)
 
-The two closest planetary encounters of the entire event, three days apart.
+The two closest planetary encounters of the entire event, four days apart.
 
 **Mercury does not merely get ejected — it is captured.** It leaves bound to the
 black hole on an orbit of `a = 0.128 AU`, `e = 0.251`, period 53 days. Of 386

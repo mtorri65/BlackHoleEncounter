@@ -318,7 +318,67 @@ run folder.
 
 ---
 
-## 8. What is assumed and not tested
+## 8. Nominal parameters are labels, not achieved geometry
+
+**`bh_rp_au` and `bh_tperi_offset_days` describe the BH's initial two-body orbit
+at the epoch, not the encounter it actually has.** Both drift during the long
+infall, outward in distance and later in time.
+
+Measured across the existing 2027 sweep (`v_inf` = 25, epoch 1873, nominal
+periapsis 2027-07-26):
+
+| requested rp | achieved rp | achieved date | drift |
+|---:|---:|---|---:|
+| 0.25 AU | 0.385 AU | 2027-08-17 | +22 d |
+| 0.50 AU | 0.637 AU | 2027-08-19 | +24 d |
+| 0.75 AU | 0.878 AU | 2027-08-19 | +24 d |
+| 1.00 AU | 1.116 AU | 2027-08-19 | +24 d |
+| 1.25 AU | 1.355 AU | 2027-08-19 | +24 d |
+| 1.50 AU | 1.594 AU | 2027-08-18 | +23 d |
+
+and for the 2047 configuration (`v_inf` = 10, nominal 2047-07-26):
+
+| requested rp | achieved rp | achieved date | drift |
+|---:|---:|---|---:|
+| 0.25 AU | 0.331 AU | 2047-08-29 | +34 d |
+| 0.50 AU | 0.599 AU | 2047-09-03 | +39 d |
+| 1.50 AU | 1.644 AU | 2047-09-19 | +55 d |
+
+Two consequences.
+
+**The timing drift is why the epoch is not a free choice.** The lag grows with
+the length of the infall, so moving the epoch changes the achieved periapsis date
+even when the nominal date is held fixed: from an 1885 epoch the same nominal
+2047-07-26 arrives on 2047-09-24 rather than 2047-09-03. That 21-day shift is
+enough to move Earth's post-flyby semi-major axis from 1.259 to 1.025 AU — the
+response to a timing shift is smooth, not chaotic, at about 0.011 AU per day.
+**The epoch is therefore part of the scenario definition, not a bookkeeping
+detail.**
+
+**The drift is exploited deliberately in the 2047 configuration.** Section 1
+asks for a periapsis "around 1 September 2047" and sets the nominal date to
+26 July; the +34 to +55 day drift lands the achieved encounter between 29 August
+and 19 September, median ~5 September. Setting the nominal date to 1 September
+instead would put the real encounter in mid-October.
+
+**Cause.** The BH is initialised on an exact two-body orbit *relative to the
+Sun*, but over a ~170-year infall it is really responding to the whole solar
+system. The Sun's own barycentric motion — 9.9 m/s at the 1873 epoch, 13.2 m/s
+at 1885 — is ~0.1% of a 10 km/s approach speed, and integrated over that span
+becomes tens of days. The larger 1885 value producing the larger lag is
+consistent with this. Stated as the leading explanation rather than a proven
+one: it has not been cleanly separated from the smaller opposing effect of the
+planets' mass adding to the central attractor, which would push arrival earlier.
+
+**Not worth "fixing" unless a specific analysis needs it.** Making the achieved
+values match the requested ones means either iterating `toff`/`rp` per run, or
+initialising the BH relative to the barycenter. Both would change every existing
+run folder's meaning. The drift is systematic and now measured, so it is cheaper
+to read the parameters as labels.
+
+---
+
+## 9. What is assumed and not tested
 
 - **The 30-year baseline** is a stand-in for a real observing campaign. Actual
   1885 knowledge of Uranus rested on ~195 years of positions of very uneven
