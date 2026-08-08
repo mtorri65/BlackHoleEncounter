@@ -1,6 +1,7 @@
 # ===========================================================
 # Solar System + Black Hole flyby simulation parameters
-# Compatible with solar_system_bh_rebound13.py
+# Compatible with solar_system_bh_rebound26.py
+# (orbits_format and output_dense_* require v26)
 # ===========================================================
 
 # -----------------------------------------------------------
@@ -25,16 +26,21 @@ bh_mass_msun: 0.1                 # Black hole mass [Msun]
 
 # Single-run values (used if *_range not set):
 bh_rp_au: "0.25, 1.5, 0.25"       # Periapsis distance [AU]
-bh_vinf_kms: 25.0                 # V_infinity [km/s]
+bh_vinf_kms: 10.0                 # V_infinity [km/s] -- DERIVED, not free:
+                                  # set by the 1885 observability constraint.
+                                  # See SCENARIO_2047_assumptions.md sec. 4.
 bh_inc_deg: "-90, 90, 30"         # Inclination i [deg]
-bh_tperi_offset_days: 56210       # BH reaches perihelion N days after epoch
+bh_tperi_offset_days: 63515       # nominal perihelion 2047-07-26 (epoch + 63515 d).
+                                  # Achieved is 2047-08-29..09-19 across the rp
+                                  # sweep -- see assumptions doc sec. 8.
 bh_Omega_deg: "0, 270, 90"                # Longitude of ascending node Ω [deg]
 bh_omega_deg: "0, 270, 90"                # Argument of periapsis ω [deg]
 
 # -----------------------------------------------------------
 # INTEGRATION SETTINGS
 # -----------------------------------------------------------
-duration_days: 112420               # Total span to integrate [days] (365 days = 1 year)
+duration_days: 119725               # 63515 + 56210: same 154-yr aftermath as the
+                                    # 2027 sweep, so climate results stay comparable
 dump_interval_days: 1            # Write compressed snapshots every N days
 output_interval_days: 30          # Log samples every N days AWAY from the encounter
 
@@ -43,8 +49,8 @@ output_interval_days: 30          # Log samples every N days AWAY from the encou
 # captures perfectly well. Set output_dense_window_days to 0 (or delete these two
 # lines) to log at a single uniform rate, as older versions did.
 #
-# With the values below, a run logs ~1825 dense + ~3650 coarse rows instead of
-# 112,420 -- about 20x less output, with full resolution where it matters.
+# With the values below, a run logs ~3650 dense + ~3870 coarse samples instead
+# of 119,725 -- about 16x less output, with full resolution where it matters.
 output_dense_window_days: 1825    # +/- 5 years around bh_tperi_offset_days
 output_dense_interval_days: 1     # Log every N days inside that window
 
@@ -102,7 +108,7 @@ debug_initial_state: true   # prints the sanity-check block at t=0
 #   simulations/YYYYMMDD_HHMMSS/<STAMP>__rp<...>__vinf<...>/
 #     ├── <STAMP>__input.yaml
 #     ├── <STAMP>__snapshot_XXXXXX.npz
-#     ├── <STAMP>__orbits__<rp>__<mbh>.xlsx
+#     ├── <STAMP>__orbits__<rp>__<mbh>.parquet   (xlsx if orbits_format says so)
 #     ├── <STAMP>__belt_run_before.csv
 #     ├── <STAMP>__belt_run_after.csv
 #     ├── <STAMP>__belt_run__<rp>__<m>_ae_scatter.png
