@@ -38,7 +38,8 @@ import numpy as np
 import pandas as pd
 
 from orbital_climate.config import Config, load_config
-from orbital_climate.mars import MarsEBM, liquid_water_possible
+from orbital_climate.mars import (MarsEBM, above_water_triple_point,
+                                  liquid_water_possible)
 
 STEPS_PER_YEAR = 180
 KELVIN = 273.15
@@ -72,6 +73,10 @@ def _evaluate(base_dict: dict, row: dict) -> dict:
     i_eq = int(np.argmin(np.abs(m.lat_deg)))
     p = rec["pressure_Pa"]
     p_max = float(p.max())
+    # Liquid-water fraction at every latitude, so the best band can be reported
+    # alongside the equatorial value. rec["T"] is (time, lat); pressure is
+    # global, so it broadcasts down the latitude axis.
+    liquid_best = liquid_water_possible(rec["T"] + KELVIN, p[:, None]).mean(axis=0)
     out.update({
         "T_global_K": float(Ta.mean()) + KELVIN,
         "T_equator_K": float(Ta[i_eq]) + KELVIN,
@@ -89,13 +94,30 @@ def _evaluate(base_dict: dict, row: dict) -> dict:
         # NOT a statement about liquid water: Mars sits essentially on water's
         # triple point (611.657 Pa), so below that pressure ice sublimates
         # directly to vapour however warm the surface gets. Kept as a bare
-        # temperature diagnostic; use the column below for habitability.
+        # temperature diagnostic; use the columns below for habitability.
         "frac_year_equator_above_273K": float(
             np.mean(rec["T"][:, i_eq] + KELVIN > 273.15)),
-        # Both conditions together: T above the triple-point temperature AND p
-        # above the triple-point pressure. Necessary, not sufficient.
+        # Three habitability diagnostics of increasing strictness, all reported
+        # so the gap between them is visible rather than a matter of trust.
+        #
+        # (a) Above the triple point in both T and p. This is what most
+        #     habitability summaries quote, and it is too generous: it counts
+        #     surfaces hot enough to boil.
+        "frac_year_above_triple_point": float(np.mean(
+            above_water_triple_point(rec["T"][:, i_eq] + KELVIN, rec["pressure_Pa"]))),
+        # (b) The same, but also requiring the ambient pressure to exceed
+        #     water's saturation vapour pressure -- i.e. liquid that does not
+        #     immediately boil. At ~700 Pa that window is only ~2 K wide, so
+        #     this is typically several times smaller than (a).
         "frac_year_liquid_water_possible": float(np.mean(
             liquid_water_possible(rec["T"][:, i_eq] + KELVIN, rec["pressure_Pa"]))),
+        # (c) The same again, but at whichever latitude does best rather than at
+        #     the equator. On a tilted, eccentric orbit the warm band migrates
+        #     off the equator -- in the strongest run of the 2047 sweep it sits
+        #     near 35 deg S -- so an equator-only diagnostic understates the
+        #     planet's best case, sometimes by a factor of several.
+        "frac_year_liquid_water_best_lat": float(liquid_best.max()),
+        "best_water_lat_deg": float(m.lat_deg[int(np.argmax(liquid_best))]),
         "spinup_years": int(info["years"]),
         "S_mean_Wm2": cfg.S0 / (4.0 * cfg.a_au ** 2 * np.sqrt(1.0 - cfg.ecc ** 2)),
         # Atmospheric collapse: the fraction of the year spent with the CO2
@@ -129,7 +151,7 @@ def main() -> int:
     if not elements.exists():
         raise SystemExit(
             f"Elements CSV not found: {elements}\n"
-            f"Run:  python extract_mars_elements.py {args.parent_dir}_parquet --workers 5")
+            f"Run:  python extract_mars_elements.py {args.parent_dir} --workers 5")
 
     el = pd.read_csv(elements)
     n_total = len(el)
@@ -177,16 +199,33 @@ def main() -> int:
             s = ok[col].dropna()
             print(f"  {lab:28s} median {s.median():9.2f}  "
                   f"5th {s.quantile(.05):9.2f}  95th {s.quantile(.95):9.2f}  [{unit}]")
+        # Four nested tests, each stricter than the last. Printed together
+        # because the drop between them is the interesting part: a habitability
+        # claim built on the first line is off by a large factor.
         warm = int((ok["frac_year_equator_above_273K"] > 0).sum())
+        trip = int((ok["frac_year_above_triple_point"] > 0).sum())
         wet = int((ok["frac_year_liquid_water_possible"] > 0).sum())
-        print(f"\n  equator above 273 K at some point           : {warm} "
+        best = int((ok["frac_year_liquid_water_best_lat"] > 0).sum())
+        print(f"\n  equator above 273 K at some point            : {warm} "
               f"({100 * warm / len(ok):.0f}%)")
-        print(f"  ...AND above water's triple-point pressure : {wet} "
+        print(f"  ...AND above the triple-point pressure      : {trip} "
+              f"({100 * trip / len(ok):.0f}%)")
+        print(f"  ...AND not boiling (true liquid, equator)   : {wet} "
               f"({100 * wet / len(ok):.0f}%)")
-        if warm > wet:
-            print(f"    -> {warm - wet} of those are above freezing at a pressure "
-                  "where liquid")
-            print("       water cannot exist; ice sublimates straight to vapour.")
+        print(f"  ...same, at the best latitude rather than 0 : {best} "
+              f"({100 * best / len(ok):.0f}%)")
+        if warm > trip:
+            print(f"    -> {warm - trip} are above freezing below the triple-point "
+                  "pressure: ice")
+            print("       sublimates straight to vapour, no liquid at any temperature.")
+        if trip > wet:
+            print(f"    -> {trip - wet} more are above the triple point but hot enough "
+                  "to boil at")
+            print("       ~700 Pa, where water boils at 275 K. The liquid window is ~2 K.")
+        if best:
+            q = ok["frac_year_liquid_water_best_lat"]
+            print(f"    best-latitude liquid fraction: median {q[q > 0].median():.3f} "
+                  f"of the year, max {q.max():.3f}")
         if "atmosphere_collapsed" in ok.columns:
             coll = int(ok["atmosphere_collapsed"].sum())
             perm = int(ok["permanently_collapsed"].sum())

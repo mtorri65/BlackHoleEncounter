@@ -260,26 +260,86 @@ def test_present_day_mars_is_recognisable():
     assert 0.10 < swing < 0.40                          # observed ~25%
 
 
-def test_liquid_water_requires_pressure_not_just_temperature():
+def test_above_triple_point_requires_pressure_not_just_temperature():
     """Mars sits on water's triple point, so temperature alone proves nothing.
 
     A bare T > 273 K test reports "above freezing" for worlds where liquid water
     is thermodynamically forbidden. Both conditions are required.
     """
     from orbital_climate.mars import (
-        liquid_water_possible, WATER_TRIPLE_P_PA, WATER_TRIPLE_T_K,
+        above_water_triple_point, WATER_TRIPLE_P_PA, WATER_TRIPLE_T_K,
     )
     # Warm but too thin -- Mars's actual failure mode.
-    assert not liquid_water_possible(300.0, 400.0)
+    assert not above_water_triple_point(300.0, 400.0)
     # Thick enough but frozen.
-    assert not liquid_water_possible(250.0, 900.0)
+    assert not above_water_triple_point(250.0, 900.0)
     # Both satisfied.
-    assert liquid_water_possible(300.0, 900.0)
+    assert above_water_triple_point(300.0, 900.0)
     # Present-day Mars sits essentially on the boundary.
     assert abs(WATER_TRIPLE_P_PA - 610.0) < 5.0
     assert WATER_TRIPLE_T_K == pytest.approx(273.16)
     # Vectorised, since the driver applies it across a year of timesteps.
     T = np.array([300.0, 300.0, 250.0])
     p = np.array([900.0, 400.0, 900.0])
-    np.testing.assert_array_equal(liquid_water_possible(T, p),
+    np.testing.assert_array_equal(above_water_triple_point(T, p),
                                   np.array([True, False, False]))
+
+
+def test_water_saturation_pressure_matches_tabulated_values():
+    """Clausius-Clapeyron, anchored on the triple point, against a steam table.
+
+    Constant latent heat is an approximation; this pins how good it is over the
+    only range that matters. Tabulated saturation pressures over liquid water:
+    611.7 Pa at 273.16 K, 872 Pa at 278.15 K, 1228 Pa at 283.15 K,
+    2339 Pa at 293.15 K.
+    """
+    from orbital_climate.mars import (
+        water_saturation_pressure_Pa, water_boiling_point_K,
+        WATER_TRIPLE_P_PA, WATER_TRIPLE_T_K,
+    )
+    # Exact at the anchor, by construction.
+    assert water_saturation_pressure_Pa(WATER_TRIPLE_T_K) == pytest.approx(
+        WATER_TRIPLE_P_PA, rel=1e-12)
+    for T, p_ref in ((278.15, 872.0), (283.15, 1228.0), (293.15, 2339.0)):
+        assert water_saturation_pressure_Pa(T) == pytest.approx(p_ref, rel=0.02)
+    # Boiling point is the exact inverse.
+    for p in (611.657, 700.0, 1000.0, 1e5):
+        assert water_saturation_pressure_Pa(water_boiling_point_K(p)) == pytest.approx(
+            p, rel=1e-9)
+    # Extrapolated to one standard atmosphere the constant-L assumption finally
+    # bites: L falls from 2.501e6 to 2.257e6 J/kg between 0 and 100 C, so the
+    # formula underestimates the boiling point by ~5 K. Pinned deliberately --
+    # it is two orders of magnitude in pressure outside the Martian range this
+    # is built for, and anyone reaching for it there should see the error.
+    assert water_boiling_point_K(101325.0) == pytest.approx(368.0, abs=1.0)
+
+
+def test_liquid_water_excludes_boiling():
+    """Above freezing is not enough -- at Martian pressures water boils at ~276 K.
+
+    This is the condition the first version of the diagnostic omitted, and the
+    omission mattered: across a 672-run sweep it inflated the best run's
+    liquid-water fraction from 1% of the year to 33%.
+    """
+    from orbital_climate.mars import (
+        liquid_water_possible, above_water_triple_point, water_boiling_point_K,
+    )
+    # 300 K at 900 Pa passes the triple-point test but boils vigorously:
+    # saturation pressure at 300 K is ~3.6 kPa, four times the ambient.
+    assert above_water_triple_point(300.0, 900.0)
+    assert not liquid_water_possible(300.0, 900.0)
+    # Just inside the window at a Mars-like pressure: 717 Pa boils at 275.4 K,
+    # so the entire liquid range there is 2.2 K wide.
+    assert water_boiling_point_K(717.0) == pytest.approx(275.37, abs=0.05)
+    assert liquid_water_possible(274.5, 717.0)
+    assert not liquid_water_possible(276.0, 717.0)
+    # Earth-like pressure reopens the range all the way to boiling.
+    assert liquid_water_possible(300.0, 101325.0)
+    # The pressure condition subsumes p > triple point: anything accepted here
+    # is necessarily above it, so the stricter test never exceeds the weaker.
+    rng = np.random.default_rng(0)
+    T = rng.uniform(200.0, 400.0, 2000)
+    p = rng.uniform(100.0, 5000.0, 2000)
+    strict, weak = liquid_water_possible(T, p), above_water_triple_point(T, p)
+    assert np.all(weak[strict])
+    assert strict.sum() < weak.sum()

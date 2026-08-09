@@ -16,12 +16,14 @@ elsewhere, so it is constructed from the IAU right ascension and declination.
 Validation: applied at t = 0 this returns a = 1.5237 AU, e = 0.0934,
 obliquity = 25.18 deg against Mars's true 1.524 / 0.0934 / 25.19.
 
-Reads the Parquet tree written by ``convert_orbits_to_parquet.py`` rather than
-the original workbooks, which makes the whole sweep a few minutes.
+Reads Parquet rather than the original workbooks, which makes the whole sweep a
+few minutes. Either layout works: the run-prefixed files engine v26 writes
+natively, or the ``orbits.parquet`` tree ``convert_orbits_to_parquet.py``
+produces from an older sweep.
 
 Usage
 -----
-    python extract_mars_elements.py simulations/<STAMP>_parquet --workers 5
+    python extract_mars_elements.py simulations/<STAMP> --workers 5
 """
 
 from __future__ import annotations
@@ -121,7 +123,8 @@ def process_run(args) -> dict | None:
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("parquet_dir", type=Path,
-                   help="Parquet tree, e.g. simulations/<STAMP>_parquet")
+                   help="Sweep folder -- engine v26 writes Parquet natively -- or "
+                        "an older simulations/<STAMP>_parquet tree.")
     p.add_argument("--body", default="Mars", choices=sorted(IAU_POLES))
     p.add_argument("--out", type=Path, default=None)
     p.add_argument("--workers", type=int, default=1)

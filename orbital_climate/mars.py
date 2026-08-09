@@ -60,20 +60,74 @@ _LN_A = float(np.log(_A_SVP))
 WATER_TRIPLE_P_PA = 611.657
 WATER_TRIPLE_T_K = 273.16
 
+# Clausius-Clapeyron exponent for water, L / R_v, with L = 2.501e6 J/kg and
+# R_v = 461.5 J/(kg K). Treating L as constant is good to ~1% over 273-300 K,
+# which is the entire range in which any of this matters.
+_WATER_L_OVER_RV = 5419.0
+
+
+def water_saturation_pressure_Pa(T_K) -> np.ndarray | float:
+    """Saturation vapour pressure of water over liquid [Pa].
+
+    Clausius-Clapeyron anchored exactly on the triple point, so it agrees with
+    ``WATER_TRIPLE_P_PA`` by construction rather than to within a rounding.
+    """
+    T = np.maximum(np.asarray(T_K, dtype=float), 1.0)
+    return WATER_TRIPLE_P_PA * np.exp(
+        _WATER_L_OVER_RV * (1.0 / WATER_TRIPLE_T_K - 1.0 / T))
+
+
+def water_boiling_point_K(p_pa) -> np.ndarray | float:
+    """Temperature [K] at which water boils under ambient pressure ``p_pa``.
+
+    The inverse of :func:`water_saturation_pressure_Pa`. At Mars-like pressures
+    this is startlingly low --- 275.4 K at 717 Pa --- which is what makes the
+    liquid-water window so narrow. Accurate to ~1% in pressure over 273-300 K;
+    the constant-L assumption degrades well outside that (it puts the boiling
+    point at one atmosphere at 368 K rather than 373 K).
+    """
+    p = np.maximum(np.asarray(p_pa, dtype=float), 1e-6)
+    inv = 1.0 / WATER_TRIPLE_T_K - np.log(p / WATER_TRIPLE_P_PA) / _WATER_L_OVER_RV
+    return 1.0 / np.maximum(inv, 1e-9)
+
+
+def above_water_triple_point(T_K, p_pa) -> np.ndarray | bool:
+    """T and p both above the triple point.
+
+    The weaker of the two tests here: it establishes that ice need not sublimate
+    straight to vapour, but says nothing about whether liquid would immediately
+    boil. Retained because it is the quantity most planetary-habitability
+    summaries actually report, and because the gap between it and
+    :func:`liquid_water_possible` is worth seeing.
+    """
+    return (np.asarray(T_K) > WATER_TRIPLE_T_K) & (np.asarray(p_pa) > WATER_TRIPLE_P_PA)
+
 
 def liquid_water_possible(T_K, p_pa) -> np.ndarray | bool:
     """Whether liquid water is thermodynamically permitted.
 
-    Requires *both* T above the triple-point temperature and p above the
-    triple-point pressure. On Mars the pressure condition is the binding one and
-    is easy to forget: a temperature-only test reports "above freezing" for
-    worlds on which liquid water cannot exist at all.
+    Liquid water needs the surface to be above freezing *and* the ambient
+    pressure to exceed water's own saturation vapour pressure. Miss the second
+    and you count boiling as habitability.
 
-    This is a necessary condition, not a sufficient one -- it ignores the
-    saturation vapour pressure of water itself, evaporative cooling, and the
-    complete absence of a water cycle in this model.
+    On Mars this matters far more than it does on Earth. At ~700 Pa water boils
+    at 275.0 K, so the entire liquid range is **273.2-275.4 K, barely two
+    kelvin wide**. A surface that swings from 250 K to 400 K over its year
+    crosses that window twice and spends almost no time inside it. Applied
+    across a 672-run flyby sweep, adding this condition cut the reported
+    liquid-water fraction of the best run from 33% of the year to 1%.
+
+    Note the pressure condition subsumes ``p > WATER_TRIPLE_P_PA``: saturation
+    pressure rises monotonically and equals the triple-point pressure at the
+    triple-point temperature, so anything passing this test is above it. See
+    :func:`above_water_triple_point` for the weaker test on its own.
+
+    Still a necessary condition, not a sufficient one. It says nothing about
+    whether water is *present*, and this model has no water cycle at all --- no
+    reservoir, no evaporative cooling, no transport.
     """
-    return (np.asarray(T_K) > WATER_TRIPLE_T_K) & (np.asarray(p_pa) > WATER_TRIPLE_P_PA)
+    T = np.asarray(T_K)
+    return (T > WATER_TRIPLE_T_K) & (np.asarray(p_pa) > water_saturation_pressure_Pa(T))
 
 
 def co2_frost_point_K(p_pa) -> np.ndarray | float:
