@@ -1,199 +1,198 @@
-# A century, 1977–2077
+# A century, 1997–2097
 
 A narrative timeline of the scenario in
-[`SCENARIO_mercury_capture.md`](SCENARIO_mercury_capture.md): a 0.1 M☉ black hole
-passing 0.637 AU from the Sun, reaching perihelion on **19 August 2027**.
-(0.5 AU is the *requested* periapsis; §8 of `SCENARIO_2047_assumptions.md`
-explains why the achieved value differs.)
+[`SCENARIO_mars_window.md`](SCENARIO_mars_window.md): a 0.1 M☉ black hole
+reaching perihelion at **0.416 AU on 19 August 2047**, approaching at 10 km/s.
 
 Every date and distance below is read from the simulation output. The framing is
 narrative; the numbers are not.
 
----
-
-## Act I — The approach (1977–2026)
-
-### 1977 · 271 AU
-
-The black hole is nine times further away than Neptune. Nothing about the solar
-system is measurably different, and nothing will be for decades. Every orbital
-element in the system reads exactly as it does today: Earth at 1.000 AU with
-`e = 0.017`, Mars at 1.524 with `e = 0.093`, Mercury at 0.387 with `e = 0.206`.
-
-The object emits nothing. Its only observable signature would be gravitational —
-the astrometric deflection of background stars as it drifts across the sky. That
-detection problem is the subject of a separate analysis thread in this repository
-and is not modelled here.
-
-### 1997 · 165 AU · 2007 · 111 AU
-
-Half a century of approach at roughly 5 AU per year. The planets' orbital
-elements remain flat to four decimal places. Whatever is going to happen has not
-started.
-
-### 2017 · 58 AU · 2022 · 30 AU
-
-The hole crosses Neptune's orbital distance around 2022. It is now inside the
-solar system in the loosest sense. Planetary elements still show nothing —
-through mid-2027 the numbers are indistinguishable from unperturbed.
-
-### 2025 · 13.6 AU
-
-Past Saturn's distance. Two years remain.
-
-### September 2026 · closest approach to Saturn, 6.35 AU
-
-The first of the encounters, and a distant one — and by a wide margin the
-earliest. Saturn, Venus (31 July 2027) and Jupiter (5 August) all reach closest
-approach *before* the hole reaches perihelion on 19 August; Earth, Mercury and
-Mars all do so after. Which side of perihelion a planet falls on is simply a
-matter of where it sits in its orbit as the hole sweeps through.
-
-### Mid-2026 · 7.6 AU · Early 2027 · inside Jupiter's orbit
-
-Twelve months out. Gravitational focusing is now accelerating the hole hard: it
-covers the last 7 AU in a year, and will cover the final 1 AU in weeks.
-
-Even now the orbital elements have barely moved. **In May 2027 — three months
-before perihelion — Earth's semi-major axis reads 0.999 AU and its eccentricity
-0.010.** The solar system is, on paper, still ordinary.
+*(This replaces an earlier timeline written for the retired 2027 sweep; that
+scenario is preserved in [`SCENARIO_mercury_capture.md`](SCENARIO_mercury_capture.md).)*
 
 ---
 
-## Act II — The passage (July–October 2027)
+## Act I — The approach (1997–2046)
 
-Everything happens in about four months.
+### 1997 · 129 AU
 
-### 31 July 2027 · Venus at 0.059 AU
+The black hole is four times further away than Neptune and closing at about
+2 AU a year. Nothing in the solar system is measurably different. Every orbital
+element reads as it does today: Earth at 1.000 AU with `e = 0.017`, Mars at
+1.524 with `e = 0.093`.
 
-Venus passes within **0.059 AU** of the hole, about 15 times the Earth–Moon
-distance. Venus does not survive the encounter as a planet of the Sun: within
-weeks its heliocentric eccentricity exceeds 4, and it is gone.
+The object emits nothing. Its only signature is gravitational — the astrometric
+deflection of background stars, and a perturbation to the outer planets far too
+small to see. That detection problem is a separate analysis thread in this
+repository.
 
-### August 2027 · Jupiter at 4.62 AU (5th) · perihelion, 0.637 AU (19th)
+### A note on 1885
 
-Jupiter goes first, and distantly — though its mass means it perturbs the hole
-nearly as much as the reverse.
+By construction, this scenario was tuned so that the hole sits *just* at the
+edge of nineteenth-century detectability. At 376 AU in 1885 it induces a
+residual of about 0.9 arcseconds in Uranus's position over a thirty-year
+campaign — the level at which a Le Verrier-class analysis might have claimed
+something, and below what the era's planetary theory could have defended. See §4
+of [`SCENARIO_2047_assumptions.md`](SCENARIO_2047_assumptions.md).
 
-On **19 August** the black hole reaches its own closest approach to the Sun:
-**0.637 AU, well inside Earth's orbit**, moving at 61 km/s.
+### 2000 · 123 AU · 2020 · 77 AU
 
-That 0.637 AU is not the 0.5 AU this run requested, and the difference is not an
-error. `bh_rp_au` fixes the periapsis of the *initial two-body orbit* at the 1873
-epoch; across the 154-year infall the achieved closest approach drifts outward
-and late. Every run in this sweep does it, by a consistent amount — requested
-0.25 → 1.50 AU arrive at 0.385, 0.637, 0.878, 1.116, 1.355 and 1.594 AU, all
-22–24 days after the nominal date of 26 July. §8 of
-[`SCENARIO_2047_assumptions.md`](SCENARIO_2047_assumptions.md) has the details.
+Two decades of approach. Planetary elements remain flat to four decimal places.
+Whatever is going to happen has not started.
 
-### September 2027 · Earth at 1.127 AU
+### 2035 · 40 AU · 2040 · 27 AU
 
-Earth's closest approach is more than an astronomical unit — no near miss. It is
-nonetheless decisive. Within a month Earth's semi-major axis has gone from
-0.999 to **1.400 AU** and its eccentricity from 0.010 to **0.253**.
+The hole crosses Neptune's orbital distance around 2036. It is now inside the
+solar system in the loosest sense, and accelerating: it will cover the next
+25 AU in six years, and the final 8 AU in one.
 
-The mechanism is not a close pass but a **differential tug**: the hole pulls the
-Sun and the Earth by different amounts in different directions, and what survives
-is the difference.
+### October 2044 · closest approach to Uranus, 14.96 AU
 
-### October 2027 · Mercury at 0.092 AU (7th), Mars at 0.104 AU (11th)
+The first of the encounters, and a distant one. Uranus is the only body whose
+closest approach falls clearly before perihelion.
 
-The two closest planetary encounters of the entire event, four days apart.
+### 2046 · 8.3 AU
 
-**Mercury does not merely get ejected — it is captured.** It leaves bound to the
-black hole on an orbit of `a = 0.128 AU`, `e = 0.251`, period 53 days. Of 386
-planetary ejections across the full 672-run sweep, only eight end this way; this
-is the cleanest of them.
+Eighteen months out, and still nothing. **In January 2047 — seven months before
+perihelion — Earth's semi-major axis reads 1.000 AU and Mars's 1.523.** The
+solar system is, on paper, entirely ordinary.
 
-**Mars is thrown inward.** Its semi-major axis first overshoots to 2.56 AU in
-September, then settles by mid-2028 at **1.295 AU** with eccentricity 0.429.
+---
 
-### The state by the end of 2027
+## Act II — The passage (August 2047 – August 2048)
+
+The dynamics that matter take eight days. The consequences take a year to
+finish arriving.
+
+### 12 August 2047 · Saturn at 9.71 AU
+
+Distant. Saturn ends the encounter barely moved — 9.53 AU to 10.69.
+
+### 19 August 2047 · perihelion, 0.416 AU · Mercury at 0.541 AU
+
+The black hole reaches its closest approach to the Sun — **0.416 AU, well inside
+Mercury's orbit** — moving at **69 km/s**. Mercury passes within 0.541 AU of it
+the same day and, remarkably, survives: it ends at 0.338 AU with `e = 0.217`,
+scarred but bound.
+
+### 21–26 August 2047 · Venus, then Earth and the Moon
+
+Venus at 0.683 AU on the 21st; the Moon at 0.851 AU on the 25th; Earth at
+0.850 AU on the 26th.
+
+**Earth's closest approach is 0.85 AU — no near miss, and decisive anyway.**
+Within months its semi-major axis has gone from 1.000 to 1.644 AU and its
+eccentricity from 0.017 to 0.426. The mechanism is not a close pass but a
+**differential tug**: the hole pulls the Sun and the Earth by different amounts
+in different directions, and what survives is the difference.
+
+**The Moon comes through it.** It ends 374 000 km from Earth against today's
+384 000 — still bound, still ordinary, orbiting a world about to freeze.
+
+### 12 September 2047 · Mars at 1.827 AU
+
+The most distant of the inner-planet encounters, and the one that matters most.
+Mars is pushed *inward*: 1.524 AU to 1.372, with eccentricity rising from 0.093
+to 0.222 and obliquity from 25.2° to 30.3°.
+
+**Earth and Mars have swapped order.** Mars is now the inner of the two.
+
+### 6 August 2048 · Jupiter at 0.603 AU
+
+A year after perihelion, the departing hole passes closer to Jupiter than it did
+to Earth. Jupiter is thrown from 5.21 AU to 6.21 with `e = 0.477` — the largest
+proportional change of any surviving planet.
+
+### The state at the end of 2048
 
 | | Before | After |
 |---|---|---|
-| Mercury | 0.387 AU, e 0.206 | **captured by the black hole** |
-| Venus | 0.723 AU, e 0.007 | **ejected**, e > 4 |
-| Earth | 0.999 AU, e 0.017 | **1.455 AU, e 0.220** |
-| Mars | 1.524 AU, e 0.093 | **1.295 AU, e 0.429** |
-
-**Earth and Mars have swapped places.** Earth is now the outer of the two.
+| Mercury | 0.387 AU, e 0.206 | 0.338 AU, e 0.217 |
+| Venus | 0.723 AU, e 0.007 | 0.933 AU, e 0.244 |
+| **Earth** | 1.000 AU, e 0.017 | **1.644 AU, e 0.426** |
+| **Mars** | 1.524 AU, e 0.093 | **1.372 AU, e 0.222** |
+| Jupiter | 5.207 AU, e 0.048 | 6.211 AU, e 0.477 |
+| Neptune | 30.02 AU, e 0.008 | **206 AU, e 0.864** — for now |
 
 ---
 
-## Act III — Departure and consequence (2028–2077)
+## Act III — Consequence (2049–2097)
 
-The hole recedes on the mirror image of its approach: 6.8 AU by mid-2028,
-30 AU by 2032, 111 AU by 2047, and **270 AU by 2077** — back where it was in 1977,
-now with Mercury and Venus in tow.
+### Earth freezes, in four years
 
-The dynamics are finished within months. **The climate takes decades**, and this
-is where the century's real story is.
+Earth's year is now **770 days** — 2.11 calendar years — and it receives
+139 W/m², about 41% of what it does today.
 
-### Earth freezes
+| Earth orbit | ≈ calendar | Global mean | Northern ice edge |
+|---:|---:|---|---|
+| 1 | 2049 | 255.5 K | **1° latitude** |
+| **2** | **2051** | **216.3 K** | **pole to pole** |
+| 3 | 2053 | 205.2 K | frozen |
+| 5 | 2058 | 201.5 K | frozen |
+| 100 | 2258 | **201.2 K** | equilibrium |
 
-Earth's year is now **639 days**. The transient below is in calendar time.
+By the end of Earth's *first* orbit the permanent ice edge has reached the
+equator's doorstep. **On the second orbit — 2051, four calendar years after the
+encounter — the ice closes over the equator.** Everything after that is a frozen
+planet settling toward its 201 K floor.
 
-| | Global mean | Northern ice edge |
-|---|---|---|
-| **2029** | 263.0 K | **27° latitude** |
-| **2031** | 231.8 K | **pole to pole** |
-| 2033 | 212.0 K | frozen |
-| 2038 | 190.5 K | frozen |
-| 2045 | 185.1 K | frozen |
-| **2062** | **184.1 K** | equilibrium |
+It is permanent. Escaping this state needs about 29% more sunlight than
+present-day Earth receives; this Earth receives 41% of it. There is no path back
+within the century, or any century.
 
-By 2029 — two years after the passage — permanent ice reaches the latitude of
-Cairo and northern India. **By 2031 the ice reaches the equator.** The remaining
-three decades merely cool a frozen planet toward its 184 K floor.
+*(Caveat: a thermal result. Oceans reach freezing on this schedule;
+kilometre-thick ice sheets take far longer. The model has no ice-sheet
+dynamics.)*
 
-The collapse is fast because both feedbacks push together: less sunlight cools
-the surface, ice forms, the brighter surface reflects more, and it cools further.
+### April 2058 · Neptune is taken
 
-**It is permanent.** Escaping a snowball in this model requires roughly 29% *more*
-sunlight than present-day Earth receives. This Earth receives about half. There
-is no path back within the century, or any century.
+For a decade Neptune has been travelling an absurd orbit — bound, but reaching
+past 200 AU and taking centuries to complete. It is still, formally, a planet of
+the Sun.
 
-*(Caveat: this is a thermal result. The oceans reach freezing temperatures on
-this schedule; kilometre-thick ice sheets take far longer. The model has no
-ice-sheet dynamics.)*
+Then the outbound black hole, 25 AU from the Sun and receding, passes within
+**3.200 AU of it**. Neptune's eccentricity goes to 1.79 and it leaves.
 
-### Mars becomes seasonally habitable
+The solar system loses a planet eleven years after the black hole's closest
+approach, to an encounter most of a decade in the making.
 
-Mars, meanwhile, has moved the other way. Its year is now 538 days, and with
-`e = 0.429` its distance from the Sun swings between 0.74 and 1.85 AU — a **6.4×
-flux ratio**. With a thermal time constant of about a week, Mars tracks that
-swing almost instantaneously.
+### Mars, meanwhile, has a season
 
-The result is a planet of violent extremes: a mean temperature 12 K warmer than
-before, an equatorial seasonal range of **119 K**, and peak surface temperatures
-of **310 K at the equator and 338 K in the southern subtropics**.
+Mars's year is now 587 days, and its distance from the Sun swings between
+1.068 and 1.676 AU. Obliquity has risen to 30.3°, and the longitude of
+perihelion has shifted to 216° — which places **southern summer at perihelion**.
 
-**Sixty-one per cent of the atmosphere now freezes onto the winter pole and
-returns each year**, against 22% today — so the surface pressure cycles between
-288 and 737 Pa.
+The result is not a warm planet. The global mean is 212.9 K, the equator's
+annual mean 230 K, the winter pole 173 K. Thirty per cent of the atmosphere
+freezes onto the winter cap and returns each year, cycling the surface pressure
+between 501 and 716 Pa. The atmosphere never collapses.
 
-That cycle is what matters. Because perihelion warms the surface *and* sublimates
-the caps, the atmosphere is thickest exactly when the planet is warmest — and
-during roughly **79 days of each Martian year, at around 30° south, both the
-temperature and the pressure exceed water's triple point simultaneously.**
+But at **34.5° south**, for **33 days of each Martian year**, the surface holds
+between 273.2 and 273.7 K while the pressure sits near 700 Pa — and under those
+conditions liquid water is thermodynamically permitted. It will not freeze, and
+it will not boil.
 
-For the first time in its history, liquid water is thermodynamically permitted on
-Mars — seasonally, in one hemisphere, for about a seventh of the year.
+It is the first time in the planet's history that has been true.
 
-*(Whether water would actually be present is a different question the model
-cannot answer; see §6 of the scenario study. And the window depends on an assumed
-CO₂ inventory with only a 21% margin — below it, the window closes entirely.)*
+**The margin is razor-thin.** At 700 Pa water boils at 274.5 K. The entire
+window — freezing to boiling — is under one and a half kelvin, and the surface
+spends 33 days inside it because its temperature happens to level off there, not
+because anything holds it. A small error in the CO₂ inventory, the albedo or the
+heat transport closes it completely.
 
-### 2077
+And the window says only that liquid water *could* exist. Whether any is present
+to do so is a question the model cannot answer.
 
-The black hole is 270 AU away and receding, carrying Mercury. Venus is gone.
-Earth is a frozen world at 184 K, and will remain one. Mars has an atmosphere
-that collapses and rebuilds every year, and a southern summer in which water
-could — thermodynamically — be liquid.
+### 2097
 
-Within a single century the solar system has lost two planets, frozen a third,
-and given a fourth its first opportunity for liquid water.
+The black hole is 124 AU away and receding, carrying Neptune. Earth is a frozen
+world at 201 K and will remain one. Jupiter runs an eccentric orbit it will keep
+for the rest of the Sun's life. And Mars — smaller, colder, and now the third
+planet rather than the fourth — has a month each year in its southern
+subtropics during which water could, in principle, be liquid.
+
+Within a single century the solar system has lost one planet, frozen another,
+and handed a third a narrow, precarious opening.
 
 ---
 
@@ -204,14 +203,15 @@ post-flyby orbital elements, which are validated by reproducing present-day
 values when applied at t = 0.
 
 **Modelled with stated limits:** the climate outcomes. The Earth model omits
-ice-sheet dynamics; the Mars model omits water, the diurnal cycle, topography and
-dust. See `CLIMATE_MODEL_REPORT.md` §10.
+ice-sheet dynamics; the Mars model omits water entirely, along with the diurnal
+cycle, topography and dust. See `CLIMATE_MODEL_REPORT.md` §10.
 
-**Not modelled at all:** the detectability of the hole during the approach, any
-tidal or relativistic effects, the Moon's fate, the asteroid belt (`n_belt = 0`
-in this run), and everything about the biosphere.
+**Not modelled at all:** the detectability of the hole during approach, tidal or
+relativistic effects, the asteroid belt (`n_belt = 0` in this run), and
+everything about the biosphere.
 
-**And this is one run of 672.** It sits in the tail — 90th percentile for Martian
-seasonal amplitude, 95th for peak temperature, and one of only eight capture
-events. A typical flyby in this sweep does far less. The century described here is
-a possibility, not a prediction.
+**And this is one run of 672.** It ranks 87th on orbital disruption — not an
+extreme event — but it is one of only 32 that freeze the Earth, eject a planet
+and open a Martian water window at the same time. A typical flyby in this sweep
+does none of those. The century described here is a possibility, not a
+prediction.

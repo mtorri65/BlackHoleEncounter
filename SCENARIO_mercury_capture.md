@@ -1,5 +1,14 @@
 # Scenario study — the run where Mercury leaves with the black hole
 
+> **Superseded, and retained for the record.** This describes a run from the
+> retired 2027 sweep (`simulations/20260724_230314`), which used v∞ = 25 km/s
+> and predates both the Moon-momentum fix and the corrected liquid-water
+> diagnostic. The current scenario is
+> [`SCENARIO_mars_window.md`](SCENARIO_mars_window.md), drawn from the 2047
+> sweep. **The Martian habitability section below has been corrected in place
+> and its original numbers were wrong by roughly a factor of nine** — see §6.
+> The dynamics are unaffected.
+
 A detailed case study of one simulation from the sweep in
 [`CLIMATE_MODEL_REPORT.md`](CLIMATE_MODEL_REPORT.md). Everything here is a claim
 about **this run**, not about flybys in general; §7 quantifies how atypical it is.
@@ -166,40 +175,47 @@ The question this scenario was ultimately posed to answer. Computed at
 
 ### The condition
 
-Liquid water requires **both** conditions simultaneously:
+Liquid water requires **three** conditions, not the two originally used here:
 
 ```
-T > 273.16 K     AND     p > 611.657 Pa      (water's triple point)
+T > 273.16 K     AND     p > 611.657 Pa     AND     p > p_sat(T)
 ```
 
-The pressure condition is easy to forget and is often the binding one. Mars sits
-essentially *on* the triple point — its mean surface pressure is ~610 Pa — so
-"above freezing" alone says nothing: below 611.657 Pa, ice sublimates directly
-to vapour however warm the surface gets.
+The first two are the triple point. Mars sits essentially *on* it — mean surface
+pressure ~610 Pa — so "above freezing" alone says nothing: below 611.657 Pa, ice
+sublimates directly to vapour however warm the surface gets.
+
+**The third condition was missing from the original version of this document,
+and it dominates.** Liquid also needs the ambient pressure to exceed water's own
+saturation vapour pressure, or it boils. At this run's peak pressure of 737 Pa
+water boils at **275.8 K**, so the entire liquid range is 273.2–275.8 K — under
+three kelvin. A surface reaching 338 K is not habitable; it is a surface on
+which water flashes to vapour.
 
 ### Result
 
-| | |
-|---|---|
-| Pressure above the triple point | **47% of the year** |
-| Most favourable latitude | **−30°** (southern subtropics) |
-| Window there | **79 of 538 days (14.7%)** |
-| Peak daily-mean T in window | **338 K** |
-| Pressure during window | 615–736 Pa |
+Recomputed with the boiling condition included:
 
-By latitude:
+| Latitude | Above triple point | **True liquid** | days of 538 |
+|---|---:|---:|---:|
+| −44° | 14.4% | **0.6%** | 3 |
+| **−30°** | 14.4% | **0.0%** | **0** |
+| −15° | 14.4% | 0.0% | 0 |
+| 0° | 13.3% | 0.6% | 3 |
+| +15° | 5.0% | 0.6% | 3 |
+| +30° | 0.0% | 0.0% | 0 |
+| **best (+11°)** | 9.4% | **1.7%** | **9** |
 
-| Latitude | Fraction of year | Peak daily-mean T |
-|---|---|---|
-| **−30°** | **14.7%** | 338.1 K |
-| 0° | 13.3% | 310.0 K |
-| +15° | 4.7% | 294.4 K |
-| +30° | 0% | 280.1 K |
-| +45° | 0% | 268.2 K |
+**The original claim — 79 days at −30° — becomes zero.** The southern
+subtropics do cross freezing for 14% of the year, but they overshoot the
+2.6 K liquid window entirely and spend that time hot enough to boil at 737 Pa.
+The best any latitude manages is **9 days**, near +11°, and the favoured
+hemisphere flips from south to north.
 
-The southern preference comes from `λ_p = 247°`, which places **perihelion in
-southern summer**. Combined with 38° obliquity, that hemisphere receives the
-close approach and the strong tilt together.
+The southern preference in the *temperature* still comes from `λ_p = 247°`,
+which places perihelion in southern summer; combined with 38° obliquity that
+hemisphere gets the close approach and the strong tilt together. That is exactly
+why it overshoots.
 
 ### Why it works: the conditions peak together
 
@@ -227,14 +243,16 @@ any time. One unverified parameter separates "seasonally habitable" from "never"
 
 | | Window (somewhere on the planet) |
 |---|---|
-| Daily means, pure water (as computed) | 14.7% |
-| With a +30 K diurnal peak | 21.4% |
-| NaCl brines (252 K) | 18.9% |
-| **Perchlorate brines (199–206 K)** | **47.2%** |
+| Daily means, pure water, **corrected** | **1.7%** |
+| Daily means, pure water, triple-point test only | 14.4% |
+| NaCl brines (252 K) | not recomputed |
+| Perchlorate brines (199–206 K) | not recomputed |
 
-Perchlorates are known to be present on Mars and are what the literature actually
-discusses. With them, **pressure alone becomes the limiting condition**, satisfied
-47% of the year.
+The brine figures in the original version were computed with the triple-point
+test and are therefore also overstated; they have not been recomputed, because
+brines lower the *freezing* point while the binding constraint here is the
+*boiling* point, which they raise only slightly. A brine window would be wider
+than 1.7% but nothing like the 47% originally claimed.
 
 ---
 

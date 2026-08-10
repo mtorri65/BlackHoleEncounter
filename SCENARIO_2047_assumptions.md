@@ -10,9 +10,11 @@ analysis. Numbers are reproducible with
 [`astrometric_detectability.py`](astrometric_detectability.py); the command that
 produces each table is given with it.
 
-Companion documents: [`SCENARIO_mercury_capture.md`](SCENARIO_mercury_capture.md)
-(the 2027 run studied in detail) and [`SCENARIO_timeline.md`](SCENARIO_timeline.md)
-(its narrative century).
+Companion documents: [`SCENARIO_mars_window.md`](SCENARIO_mars_window.md) — the
+chosen run from this sweep, studied in detail — and
+[`SCENARIO_timeline.md`](SCENARIO_timeline.md), its narrative century.
+[`SCENARIO_mercury_capture.md`](SCENARIO_mercury_capture.md) covers the retired
+2027 sweep and is kept for the record.
 
 ---
 
@@ -343,6 +345,25 @@ and for the 2047 configuration (`v_inf` = 10, nominal 2047-07-26):
 | 0.25 AU | 0.331 AU | 2047-08-29 | +34 d |
 | 0.50 AU | 0.599 AU | 2047-09-03 | +39 d |
 | 1.50 AU | 1.644 AU | 2047-09-19 | +55 d |
+
+**The sign of the distance error depends on orbital orientation, not just on
+infall length.** Every run in the two tables above shares Ω = 0, and they all
+arrive wide. Sampling other orientations at rp = 0.5 AU shows the opposite is
+equally possible:
+
+| i | Ω | ω | achieved rp | achieved date |
+|---:|---:|---:|---:|---|
+| 0 | 0 | 0 | 0.599 AU | 2047-09-03 |
+| 30 | 0 | 0 | 0.608 AU | 2047-09-06 |
+| 60 | 0 | 0 | 0.586 AU | 2047-08-30 |
+| 60 | 270 | 180 | **0.416 AU** | 2047-08-19 |
+| 90 | 270 | 180 | **0.422 AU** | 2047-08-21 |
+
+Ω = 0 arrives ~0.09 AU wide; Ω = 270 arrives ~0.08 AU narrow, and about two
+weeks earlier. So the achieved periapsis spans 0.42–0.61 AU across a sweep that
+requested 0.50 throughout — roughly ±20%. An earlier version of this section
+described the drift as a uniform outward bias, which was an artefact of every
+sampled run sharing one orientation.
 
 Two consequences.
 
