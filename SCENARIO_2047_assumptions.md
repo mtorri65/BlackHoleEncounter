@@ -382,20 +382,45 @@ asks for a periapsis "around 1 September 2047" and sets the nominal date to
 and 19 September, median ~5 September. Setting the nominal date to 1 September
 instead would put the real encounter in mid-October.
 
-**Cause.** The BH is initialised on an exact two-body orbit *relative to the
-Sun*, but over a ~170-year infall it is really responding to the whole solar
-system. The Sun's own barycentric motion — 9.9 m/s at the 1873 epoch, 13.2 m/s
-at 1885 — is ~0.1% of a 10 km/s approach speed, and integrated over that span
-becomes tens of days. The larger 1885 value producing the larger lag is
-consistent with this. Stated as the leading explanation rather than a proven
-one: it has not been cleanly separated from the smaller opposing effect of the
-planets' mass adding to the central attractor, which would push arrival earlier.
+**Cause — measured, not inferred.** The BH is initialised on an exact two-body
+orbit *relative to the Sun*, but from 400 AU it is not orbiting the Sun: it is
+orbiting the whole solar system, whose mass sits at the barycentre. The Sun is
+offset from that point and moving at ~13 m/s relative to it, mostly Jupiter's
+doing, and that velocity is never removed.
 
-**Not worth "fixing" unless a specific analysis needs it.** Making the achieved
-values match the requested ones means either iterating `toff`/`rp` per run, or
-initialising the BH relative to the barycenter. Both would change every existing
-run folder's meaning. The drift is systematic and now measured, so it is cheaper
-to read the parameters as labels.
+Measuring the same orbit against both centres settles it. For the scenario run
+(`rp0p5…Om270__om180`), osculating periapsis through the infall:
+
+| year | vs the **Sun** | vs the **barycentre** |
+|---:|---:|---:|
+| 1874 | 0.4931 AU | **0.4176 AU** |
+| 1880 | 0.3180 AU | **0.4176 AU** |
+| 1950 | 0.3722 AU | **0.4176 AU** |
+| 2000 | 0.4044 AU | **0.4176 AU** |
+| 2046 | 0.4150 AU | **0.4174 AU** |
+
+Against the barycentre the periapsis is **constant to 0.0003 AU over 170
+years**; against the Sun it swings by 0.24 AU. The swing is the Sun wobbling on
+Jupiter's 12-year period, not the orbit changing. The achieved closest approach,
+0.4157 AU, is the barycentric value — the initial state encoded it from day one.
+
+The leverage is that a nearly radial orbit carries almost no angular momentum:
+h = 0.018 AU²/day here. At 400 AU a 13 m/s transverse discrepancy contributes
+r·δv ≈ 3×10⁻³ AU²/day, up to 18% of the total, from a velocity error of one part
+in a thousand. Since r_p = h²/[μ(1+e)], the measured −9% in h becomes −17% in
+periapsis distance. It also explains the orientation dependence above: whether
+the Sun's barycentric velocity adds to or subtracts from the BH's angular
+momentum depends on the approach geometry, so Ω = 0 comes out wide and Ω = 270
+narrow from the same requested value.
+
+**The fix is known and small, and has not been applied.** Constructing the BH's
+initial state relative to the Sun+planets barycentre, with
+`mu = G(M_sun + M_planets + M_bh)`, would make `bh_rp_au` mean what it says: a
+handful of lines in `build_sim`. It is not applied because it changes the
+initial conditions of every run, so the entire sweep — and every derived
+product — would have to be regenerated, to no benefit for any question asked so
+far. The drift is systematic and now fully measured, so it is cheaper to read
+the parameters as labels than to re-run 672 integrations.
 
 ---
 
