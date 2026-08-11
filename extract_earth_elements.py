@@ -23,9 +23,9 @@ sin(delta) = sin(eps) sin(lambda) with lambda = 0 at the northern vernal
 equinox, which places lambda = 0 at 90 deg from s_perp along the direction of
 orbital motion.
 
-Validation: applied to t=0 this recovers lambda_p = 282.3 deg at the 1873 epoch
-(present-day value is ~283 deg) and reproduces the CSV's a_before / e_before to
-five decimals.
+Validation: applied at t=0 this recovers lambda_p to within a degree of the
+known value for that epoch (282.3 deg at 1873-09-01; it precesses ~1.7 deg per
+century) and reproduces the CSV's a_before / e_before to five decimals.
 
 Input formats
 -------------

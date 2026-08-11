@@ -3,6 +3,11 @@
 Design record for the black-hole flyby sweep with **periapsis in July 2047**,
 superseding the 2027 configuration used for `simulations/20260724_230314`.
 
+> **State of this document.** Sections 1-4, 6, 7 and 9 are current for the
+> configuration below (epoch 1885-09-01, `v_inf` = 25 km/s). **Sections 5 and 8
+> contain measurements from a superseded sweep and are pending regeneration**
+> once the current configuration has been run; they are marked in place.
+
 Every parameter below is either a free choice or is *forced* by a stated
 constraint. This document records which is which, so that later work can tell
 what may be varied freely and what cannot be changed without redoing an
@@ -21,11 +26,12 @@ chosen run from this sweep, studied in detail — and
 ## 1. The configuration
 
 ```yaml
+epoch: "1885-09-01T00:00:00Z"    # chosen: matches the constraint date below
 bh_mass_msun: 0.1                # imposed
-bh_vinf_kms: 10.0                # DERIVED -- see section 4
-bh_tperi_offset_days: 63515      # imposed: 1873-09-01 + 63515 d = 2047-07-26
+bh_vinf_kms: 25.0                # DERIVED -- see section 4
+bh_tperi_offset_days: 59132      # imposed: 1885-09-01 + 59132 d = 2047-07-26
 bh_rp_au: "0.25, 1.5, 0.25"      # imposed (swept)
-duration_days: 119725            # chosen: preserves the 2027 sweep's aftermath
+duration_days: 115342            # chosen: preserves the 2027 sweep's aftermath
 ```
 
 The four imposed constraints were:
@@ -39,10 +45,14 @@ Constraint 1 is an *observability* constraint, not a dynamical one, and it is
 the only reason `v_inf` is not free. Everything downstream of it inherits that
 choice — see section 6 for what changes if it is relaxed.
 
-`duration_days: 119725` gives 56,210 days after periapsis, identical to the 2027
-sweep, so climate results remain directly comparable. The alternative, 127030,
-would place periapsis at the exact midpoint of the integration as the old config
-did, at ~6% more cost.
+`duration_days: 115342` gives 56,210 days after periapsis, identical to the 2027
+sweep, so climate results remain directly comparable.
+
+The epoch is set to 1885-09-01 so that t = 0 coincides with the date the
+observability constraint is evaluated. Nothing physical depends on it — the
+epoch only selects which real planetary configuration the integration starts
+from — but it removes a standing source of confusion, since the BH's distance at
+any date depends on the epoch through `bh_tperi_offset_days`.
 
 ---
 
@@ -51,7 +61,7 @@ did, at ~6% more cost.
 `python astrometric_detectability.py horizon`
 
 Two N-body integrations, identical but for the BH, differenced. Sun + 8 planets
-from de440s at the 1873-09-01 epoch, IAS15.
+from de440s at the epoch, IAS15.
 
 Three deliberate choices, each of which materially affects the answer:
 
@@ -94,6 +104,12 @@ the window's midpoint:
 
 Reading off Uranus: **1″ at ~610 AU, 3″ at ~420 AU, 30″ at ~196 AU.**
 
+> **Read this table for its shape, not its absolute scale.** It was computed at
+> `v_inf` = 25 with each window anchored at the epoch, and §4 shows the detrended
+> metric moves by more than an order of magnitude with window position and
+> length. The *relative* sensitivities across planets — which is what this
+> section is about — are robust; the absolute arcsecond values are not.
+
 **Why Uranus and not an inner planet.** A distant perturber acts as a tidal
 quadrupole growing as $a^3$, while the orbital frequency that converts it into
 an accumulated angle falls as $a^{-3/2}$; net sensitivity goes as $a^{3/2}$.
@@ -127,38 +143,79 @@ horizon inward to ~420 AU and lower the derived `v_inf` (section 4).
 
 ## 4. Deriving `v_inf` from the 1885 constraint
 
-`python astrometric_detectability.py vinf --peri 2047-07-26 --when 1885`
+`python astrometric_detectability.py vinf --epoch 1885-09-01 --peri 2047-07-26 --when 1885`
 
-With periapsis pinned to 2047-07-26, 1885 sits 162.6 years before arrival. That
+With periapsis pinned to 2047-07-26, 1885 sits 162 years before arrival. That
 fixes the travel time, so requiring a particular residual in 1885 fixes the
-distance then, which fixes the approach speed. Uranus residual over an
-1855–1885 window, rp = 0.5 AU:
+distance then, which fixes the approach speed.
 
-| `v_inf` | r(1855) | r(1885) | detrended | raw |
-|---:|---:|---:|---:|---:|
-| 8 km/s | 369 AU | 317 AU | 1.60″ | 3.07″ |
-| **10 km/s** | **440 AU** | **376 AU** | **0.92″** | 1.94″ |
-| 12 km/s | 514 AU | 437 AU | 0.55″ | 1.27″ |
-| 14 km/s | 591 AU | 501 AU | 0.34″ | 0.86″ |
-| 16 km/s | 668 AU | 566 AU | 0.22″ | 0.60″ |
-| 19 km/s | 786 AU | 665 AU | 0.11″ | 0.37″ |
-| 22 km/s | 905 AU | 765 AU | 0.06″ | 0.23″ |
-| 25 km/s | 1025 AU | 866 AU | 0.03″ | 0.15″ |
+**The answer depends strongly on how long an observing campaign is assumed**,
+and that dependence is the single most important thing in this section. Uranus
+detrended residual as of 1885, rp = 0.5 AU:
 
-**"Barely recognizable" at ~1″ gives `v_inf` = 10 km/s.** Read the phrase as 2″
-and it becomes ~7.5; as 0.5″, ~12.5. **The defensible range is 8–13 km/s.**
+| `v_inf` | r(1885) | 20-yr | 30-yr | 60-yr | **100-yr** |
+|---:|---:|---:|---:|---:|---:|
+| 10 km/s | 375 AU | 0.41″ | 3.61″ | 8.15″ | **9.12″** |
+| 15 km/s | 534 AU | 0.27″ | 1.35″ | 2.46″ | **3.22″** |
+| 20 km/s | 698 AU | 0.16″ | 0.59″ | 0.84″ | **1.45″** |
+| **25 km/s** | **866 AU** | 0.10″ | 0.28″ | 0.54″ | **0.76″** |
+| 30 km/s | 1035 AU | 0.06″ | 0.14″ | 0.39″ | **0.45″** |
 
-At `v_inf` = 10 the BH sits at **400 AU at the 1873 epoch**, against 926 AU for
-the old 25 km/s configuration.
+**The 100-year column is the defensible one.** Uranus was discovered in 1781 and
+has prediscovery positions back to 1690, so an analyst in 1885 had roughly a
+century of usable data, not thirty years. Read down it: **`v_inf` = 25 km/s puts
+the residual at 0.76″**, just below the ~1″ that a Le Verrier-class analysis
+might have claimed and well below what the era's planetary theory could have
+defended. That is the constraint met.
+
+At `v_inf` = 25 the BH sits at **863 AU at the 1885 epoch**.
+
+### The metric is fragile, and this is a real limitation
+
+The detrended residual is **not** a smooth function of distance. Holding
+everything else fixed and varying only the window:
+
+* **Window position**: a 30-year campaign slid across 1850–1935 gives anything
+  from 0.42″ to 8.54″ — **a factor of 20** — while the raw (undetrended) signal
+  climbs smoothly and monotonically as D⁻³ throughout.
+* **Window length**: at a fixed 1885 end date, 20 → 100 years spans 0.41″ to
+  9.12″ at `v_inf` = 10 — **a factor of 22**.
+* **Epoch**: the same query at the retired 1873 epoch gives 0.03″ where the 1885
+  epoch gives 0.28″.
+
+The cause is the detrending, not the physics. Removing a constant and a linear
+term is a proxy for an orbit refit, and Uranus's 84-year period means a campaign
+of a few decades covers a fraction of an orbit over which the perturbation can
+look nearly linear — in which case a refit absorbs almost all of it — or
+strongly curved, in which case it survives. The nulls are refit degeneracies.
+
+**Consequence for this section.** An earlier version of this document derived
+`v_inf` = 10 km/s from a 30-year campaign ending in 1885, which happens to sit
+near one of those nulls. That was not wrong arithmetic; it was an arbitrary
+choice carrying the entire answer. The 100-year baseline is better justified on
+historical grounds, and it gives 25 km/s.
+
+**What would settle it properly** is replacing constant+linear detrending with a
+genuine multi-element orbit refit — six elements plus planetary masses, fitted
+to synthetic observations. That removes the degeneracy nulls and would give a
+number that does not move when the window does. Until then, treat `v_inf` = 25
+as a defensible choice rather than a derived value, and note that the whole
+scenario is insensitive to it: §5 shows the encounter barely changes.
 
 **Periapsis distance does not interact with this constraint.** Across
-rp = 0.25 → 1.50 AU the required `v_inf` moves by 0.04 km/s, because 1.5 AU is
-nothing against 400 AU. rp may be swept freely without revisiting any of the
-above.
+rp = 0.25 → 1.50 AU the required `v_inf` moves by well under 0.1 km/s, because
+1.5 AU is nothing against 863 AU. rp may be swept freely without revisiting any
+of the above.
 
 ---
 
 ## 5. Consequences for the encounter itself
+
+> **PENDING REGENERATION.** The measurements below come from the superseded
+> `v_inf` = 10 / epoch 1873 configuration. The *conclusion* — that gravitational
+> focusing makes the encounter nearly independent of `v_inf` — is what justifies
+> not worrying about §4's fragility, and it holds a fortiori at 25 km/s. The
+> specific numbers need re-measuring against the current sweep.
 
 `v_inf` = 10 km/s was expected to produce a far more violent flyby, since the
 impulse approximation gives Δv ∝ 1/v. **It does not**, and the reason is worth
@@ -321,6 +378,14 @@ run folder.
 ---
 
 ## 8. Nominal parameters are labels, not achieved geometry
+
+> **PENDING REGENERATION** for the current configuration. The mechanism (below,
+> under *Cause*) is exact and epoch-independent; the tabulated achieved values
+> are from superseded sweeps. Three spot checks at `v_inf` = 25 with the 1885
+> epoch, nominal periapsis 2047-07-26: i=0/Ω=0/ω=0 → 0.600 AU on 2047-08-27;
+> i=30/Ω=0/ω=0 → 0.609 AU on 2047-08-29; i=60/Ω=270/ω=180 → **0.254 AU** on
+> 2047-07-20. The spread is wider than at 10 km/s, as expected — the BH starts
+> at 863 AU rather than 400, and the angular-momentum error scales as r·δv.
 
 **`bh_rp_au` and `bh_tperi_offset_days` describe the BH's initial two-body orbit
 at the epoch, not the encounter it actually has.** Both drift during the long

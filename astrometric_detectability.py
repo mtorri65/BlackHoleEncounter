@@ -60,7 +60,12 @@ from skyfield.api import load
 from skyfield.constants import AU_KM
 
 G = 0.0002959122082855911          # AU^3 / (Msun day^2)
-EPOCH = dt.datetime(1873, 9, 1)
+
+# Simulation epoch: the instant the planets' states are read from the ephemeris
+# and t = 0 for everything downstream. MUST match the sweep being reasoned about,
+# because the BH's distance at any date depends on it. Overridable with --epoch;
+# sweeps in this repository have used 1873-09-01 (retired) and 1885-09-01.
+EPOCH = dt.datetime(1885, 9, 1)
 RAD2AS = 206264.806
 AU_PC = 4.84814e-6
 G_PC = 4.30091e-3                  # pc/Msun (km/s)^2
@@ -80,8 +85,14 @@ NAMES = list(PLANET_MASSES)
 _STATE: dict | None = None
 
 
+def set_epoch(when: dt.datetime) -> None:
+    """Change the epoch, invalidating the cached ephemeris states."""
+    global EPOCH, _STATE
+    EPOCH, _STATE = when, None
+
+
 def states():
-    """Heliocentric states of the planets at the 1873 epoch (cached)."""
+    """Heliocentric states of the planets at ``EPOCH`` (cached)."""
     global _STATE
     if _STATE is None:
         eph = load("de440s.bsp")
@@ -281,9 +292,14 @@ def cmd_rates(args):
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--epoch", default="1885-09-01",
+                        help="Simulation epoch; must match the sweep being "
+                             "reasoned about (default 1885-09-01, the current "
+                             "input.yaml value).")
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    h = sub.add_parser("horizon", help="Residual vs BH distance, all planets.")
+    h = sub.add_parser("horizon", parents=[common], help="Residual vs BH distance, all planets.")
     h.add_argument("--window", type=float, default=30.0, help="Baseline [yr].")
     h.add_argument("--vinf", type=float, default=25.0)
     h.add_argument("--rp", type=float, default=0.5)
@@ -292,7 +308,7 @@ def main() -> int:
                             22000, 17000])
     h.set_defaults(func=cmd_horizon)
 
-    v = sub.add_parser("vinf", help="Solve v_inf from an observability constraint.")
+    v = sub.add_parser("vinf", parents=[common], help="Solve v_inf from an observability constraint.")
     v.add_argument("--peri", default="2047-07-26", help="Periapsis date.")
     v.add_argument("--when", type=int, default=1885, help="Year the limit applies.")
     v.add_argument("--window", type=float, default=30.0, help="Baseline [yr].")
@@ -302,7 +318,7 @@ def main() -> int:
                    default=[8, 10, 12, 14, 16, 19, 22, 25])
     v.set_defaults(func=cmd_vinf)
 
-    r = sub.add_parser("rates", help="Astrophysical plausibility of a slow BH.")
+    r = sub.add_parser("rates", parents=[common], help="Astrophysical plausibility of a slow BH.")
     r.add_argument("--mass", type=float, default=0.1, help="BH mass [Msun].")
     r.add_argument("--v", type=float, default=200.0, help="Halo speed [km/s].")
     r.add_argument("--vcut", type=float, default=10.0, help="Required v_inf [km/s].")
@@ -313,6 +329,8 @@ def main() -> int:
     r.set_defaults(func=cmd_rates)
 
     args = p.parse_args()
+    set_epoch(dt.datetime.strptime(args.epoch, "%Y-%m-%d"))
+    print(f"(epoch {EPOCH:%Y-%m-%d})")
     args.func(args)
     return 0
 

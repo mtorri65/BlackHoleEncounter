@@ -37,7 +37,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-EPOCH = dt.datetime(1873, 9, 1)
+# Fallback only. The epoch is read from each run's own __input.yaml by
+# epoch_for(); see below. Sweeps have used both 1873-09-01 and 1885-09-01.
+EPOCH_FALLBACK = dt.datetime(1885, 9, 1)
+EPOCH = EPOCH_FALLBACK          # rebound to the run's value in main()
 
 INK, INK2, MUTED = "#0b0b0b", "#52514e", "#898781"
 GRID, AXIS, SURFACE = "#e1e0d9", "#c3c2b7", "#fcfcfb"
@@ -62,6 +65,29 @@ BODY_COLOUR = {
     "Saturn":  "#e34948",   # slot 8  red
 }
 
+
+
+def epoch_for(parquet_path) -> dt.datetime:
+    """Read the simulation epoch from the run folder's own ``*__input.yaml``.
+
+    The epoch is t = 0 for every ``t_days`` value in the trajectory log, so
+    hardcoding it silently mislabels every date by however much the sweep's
+    epoch differs. Reading it from the run that produced the data removes that
+    failure mode; the constant below is only a fallback for loose files.
+    """
+    import glob as _glob
+    from pathlib import Path as _Path
+    for cand in _glob.glob(str(_Path(parquet_path).parent / "*input.yaml")):
+        try:
+            import yaml
+            raw = yaml.safe_load(open(cand, encoding="utf-8")).get("epoch")
+            if raw:
+                return dt.datetime.strptime(str(raw)[:19], "%Y-%m-%dT%H:%M:%S")
+        except Exception:                      # noqa: BLE001 - fall back quietly
+            pass
+    print(f"  (no input.yaml beside {Path(parquet_path).name}; "
+          f"assuming epoch {EPOCH_FALLBACK:%Y-%m-%d})")
+    return EPOCH_FALLBACK
 
 def to_t(datestr: str) -> int:
     return (dt.datetime.strptime(datestr, "%Y-%m-%d") - EPOCH).days
@@ -122,6 +148,8 @@ def main() -> int:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
+    global EPOCH
+    EPOCH = epoch_for(args.parquet)
     t0, t1 = to_t(args.start), to_t(args.end)
     d = pd.read_parquet(args.parquet)
     d = d[(d.t_days >= t0) & (d.t_days <= t1)]

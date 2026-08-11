@@ -41,7 +41,11 @@ script either consumes its output files or duplicates a fragment of its logic. I
 - Reads a YAML config (`input.yaml`) describing the BH's hyperbolic orbit — periapsis,
   v-infinity, inclination, longitude of ascending node, argument of periapsis, time-of-
   periapsis offset — each optionally given as a `min,max,step` sweep range — plus
-  integration and output-writing settings.
+  integration and output-writing settings. `epoch` is t = 0 for every `t_days` in the
+  output and the reference for `bh_tperi_offset_days`, so changing it changes the
+  scenario, not just labels. The current config uses 1885-09-01; the retired 2027 sweep
+  used 1873-09-01. Scripts that turn `t_days` back into dates read the epoch from each
+  run's own `__input.yaml` rather than assuming one.
 - Initializes the Sun, planets and Moon from a Skyfield JPL ephemeris (de440s) at a UTC
   epoch. The Moon used to be a synthetic fixed offset from Earth with an orbital velocity
   but no compensating change to Earth's — which injected ~12.4 m/s of spurious momentum
