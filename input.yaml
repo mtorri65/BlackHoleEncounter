@@ -40,7 +40,18 @@ bh_tperi_offset_days: 59132       # nominal perihelion 2047-07-26 (epoch + 59132
                                   # Achieved spans 2047-07-20..08-29 depending on
                                   # orientation -- see assumptions doc sec. 8.
 bh_Omega_deg: "0, 270, 90"                # Longitude of ascending node Ω [deg]
-bh_omega_deg: "0, 270, 90"                # Argument of periapsis ω [deg]
+bh_omega_deg: "0, 345, 15"        # Argument of periapsis ω [deg], 24 values.
+                                  # 15 deg not 90: omega sets the DIRECTION from
+                                  # the Sun to periapsis, so sweeping it walks the
+                                  # encounter past one planet after another. It is
+                                  # the one angle the outcome is rough in. Measured
+                                  # at rp=0.5, inc=30, Om=0: across a single 90 deg
+                                  # cell Earth goes from untouched to ejected and
+                                  # the unbound-planet count from 0 to 4, none of
+                                  # which the old grid saw. Omega and inclination
+                                  # are smooth by comparison and keep their steps:
+                                  # the 30 deg inclination grid recovers 99-100% of
+                                  # the range a 15 deg one finds, at every omega.
 
 # -----------------------------------------------------------
 # INTEGRATION SETTINGS
