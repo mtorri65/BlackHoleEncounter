@@ -3,10 +3,12 @@
 Design record for the black-hole flyby sweep with **periapsis in July 2047**,
 superseding the 2027 configuration used for `simulations/20260724_230314`.
 
-> **State of this document.** Sections 1-4, 6, 7 and 9 are current for the
-> configuration below (epoch 1885-09-01, `v_inf` = 25 km/s). **Sections 5 and 8
-> contain measurements from a superseded sweep and are pending regeneration**
-> once the current configuration has been run; they are marked in place.
+> **State of this document.** Current for the configuration below
+> (epoch 1885-09-01, `v_inf` = 25 km/s), run as
+> `simulations/20260811_184731` — 4032 runs, complete. Sections 5 and 8 still
+> quote measurements taken from superseded sweeps; the mechanisms they describe
+> are unchanged and confirmed, but the specific tabulated values have not been
+> re-measured against the current run. They are marked in place.
 
 Every parameter below is either a free choice or is *forced* by a stated
 constraint. This document records which is which, so that later work can tell
@@ -30,7 +32,10 @@ epoch: "1885-09-01T00:00:00Z"    # chosen: matches the constraint date below
 bh_mass_msun: 0.1                # imposed
 bh_vinf_kms: 25.0                # DERIVED -- see section 4
 bh_tperi_offset_days: 59132      # imposed: 1885-09-01 + 59132 d = 2047-07-26
-bh_rp_au: "0.25, 1.5, 0.25"      # imposed (swept)
+bh_rp_au: "0.25, 1.5, 0.25"      # imposed (swept), 6 values
+bh_inc_deg: "-90, 90, 30"        # 7 values
+bh_Omega_deg: "0, 270, 90"       # 4 values
+bh_omega_deg: "0, 345, 15"       # 24 values -- DERIVED, see section 10
 duration_days: 115342            # chosen: preserves the 2027 sweep's aftermath
 ```
 
@@ -504,3 +509,44 @@ the parameters as labels than to re-run 672 integrations.
 - **The BH's own detectability** by other channels — astrometric deflection of
   background stars, microlensing — is a separate analysis thread in this
   repository (`GAIA_dr3_v1.py` and successors) and is not folded in here.
+
+
+---
+
+## 10. Angular grid resolution
+
+`bh_omega_deg` is sampled at 15°, six times finer than the other angles, and that
+asymmetry was measured rather than guessed.
+
+**ω is the parameter the outcome is rough in.** Scanning it at 15° with
+everything else fixed (rp = 0.5, i = 30°, Ω = 0), *inside a single 90° cell*
+between ω = 45° and 75°, Earth goes from untouched to ejected and the number of
+unbound planets from zero to four. The four values a 90° grid samples span Earth
+a = 0.82–2.10 where the full scan spans −6.68 to 3.11, and every one of them
+unbinds one or two planets while the finer scan finds cases with zero and with
+four. **A 90° grid is not merely coarse, it is biased** — it samples the middle
+of the outcome distribution and misses both tails, which affects every ejection
+statistic derived from it.
+
+**Ω and inclination are not.** The same scan in Ω shows the four sampled values
+already recover nearly the full range (0.770–1.716 against 0.770–1.787).
+Inclination at 30° recovers **99–100%** of what a 15° grid finds, at every ω
+tested including the rough zone.
+
+The reason is physical: **ω sets the direction from the Sun to periapsis**, so
+sweeping it walks the encounter past one planet after another. Ω rotates the line
+of nodes and i tilts the plane; neither aims the flyby at anything.
+
+**A rejected intermediate.** A first scan suggested inclination was oversampled
+and could be coarsened to pay for ω — but that scan was taken at ω = 0, which is
+precisely where inclination does not matter. Repeating it across ω = 0, 30, 60,
+90 showed a 45° inclination grid collapses to **20%** of the range at ω = 60°,
+and a 60° grid loses a quarter of it at ω = 90° (the peak sits at i = −60°, which
+neither samples). The saving would have cost more than it bought.
+
+**An exact symmetry halves the grid.** Runs pair off under
+**(i, Ω, ω) → (−i, Ω+180°, ω+180°)**, matching to six decimal places throughout
+the impact ranking. Roughly half of the 4032 runs are therefore physically
+redundant. Sampling i over 0–90° instead of ±90° would buy back a factor of two,
+at the cost of losing a built-in consistency check that has already proved
+useful for spotting bookkeeping errors.
