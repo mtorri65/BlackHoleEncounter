@@ -46,6 +46,43 @@ RAMP = LinearSegmentedColormap.from_list("amber", ["#6b2f16", "#d95926", "#ffc79
 LABEL, HEAD = "#c9b96a", "#fff0dd"
 MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
+# Chart orientation. RA_LEFT_EDGE is the RA hour at the left edge, which is also
+# where the track is allowed to break; RA_RIGHT says whether RA increases
+# rightward.
+#
+# The default is the star-atlas convention: RA increases to the *left*, so the
+# axis reads 24h at the left edge down to 0h at the right. That is how the sky
+# looks from inside the celestial sphere, i.e. looking up, and it means the
+# chart can be compared directly against any printed atlas. Setting
+# RA_RIGHT = True mirrors it into a left-to-right graph, which reads more
+# naturally as a plot but is backwards as a sky map.
+#
+# Seaming at 0h/24h matters independently of orientation: this run spans RA
+# 5.05h-23.17h and never crosses 0h, so the track draws as one unbroken curve.
+# The original 8h seam cut it into two disconnected pieces.
+RA_LEFT_EDGE = 24.0
+RA_RIGHT = False
+
+
+def ra_to_x(ra_hours):
+    """Map right ascension in hours to the chart's x coordinate."""
+    if RA_RIGHT:
+        return (np.asarray(ra_hours) - RA_LEFT_EDGE) % 24.0
+    return (RA_LEFT_EDGE - np.asarray(ra_hours)) % 24.0
+
+
+def tick_label(h: int) -> str:
+    """RA label for the tick at chart x = h."""
+    raw = RA_LEFT_EDGE + h if RA_RIGHT else RA_LEFT_EDGE - h
+    ra = raw % 24.0
+    # Wrap into [0, 24] rather than [0, 24): at the far edge the modulo lands
+    # back on the seam hour, and showing 0h at both ends makes the axis look
+    # like it restarts instead of spanning the sky once.
+    if ra == 0.0 and raw != 0.0:
+        ra = 24.0
+    return f"{int(round(ra))}ʰ"
+
+
 CONST = [(5.6,40,"Auriga"),(4.5,17,"Taurus"),(5.5,0,"Orion"),(7.0,24,"Gemini"),
     (8.5,20,"Cancer"),(10.5,15,"Leo"),(13.3,-2,"Virgo"),(15.2,-16,"Libra"),
     (16.8,-30,"Scorpius"),(19.0,-28,"Sagittarius"),(21.0,-19,"Capricornus"),
@@ -55,6 +92,13 @@ CONST = [(5.6,40,"Auriga"),(4.5,17,"Taurus"),(5.5,0,"Orion"),(7.0,24,"Gemini"),
     (11.5,55,"Ursa Major"),(3.4,45,"Perseus"),(0.8,38,"Andromeda"),
     (1.0,60,"Cassiopeia"),(6.8,-24,"Canis Major"),(3.5,-20,"Eridanus"),
     (10.0,-20,"Hydra"),(12.4,-18,"Corvus"),(12.0,40,"Canes Ven.")]
+
+
+def _fallback_labels(ax) -> None:
+    """Approximate constellation names, used when no star catalogue is present."""
+    for rah, dcd, nm in CONST:
+        ax.text(float(ra_to_x(rah)), dcd, nm, color=LABEL, fontsize=9,
+                ha="center", va="center", zorder=3, alpha=0.8)
 
 
 def find_ffmpeg() -> str | None:
@@ -74,6 +118,13 @@ def main() -> int:
     p.add_argument("--width", type=int, default=1600, help="Pixels; height follows.")
     p.add_argument("--pace", choices=["arc", "time"], default="arc",
                    help="'arc' = constant apparent speed; 'time' = linear in time.")
+    p.add_argument("--from-year", type=int, default=None,
+                   help="Restrict the animation to this year onward.")
+    p.add_argument("--to-year", type=int, default=None,
+                   help="Restrict the animation to this year and earlier.")
+    p.add_argument("--stars", type=float, default=5.0, metavar="MAG",
+                   help="Faintest star drawn in the backdrop; 0 disables it "
+                        "and falls back to plain name labels.")
     p.add_argument("--gif", action="store_true")
     p.add_argument("--out", type=Path, default=None)
     args = p.parse_args()
@@ -105,42 +156,67 @@ def main() -> int:
     dec = np.degrees(np.arcsin(v[2] / r))
     rs = np.linalg.norm(P["BH"] - P["Sun"], axis=0)
     yrs = np.array([epoch.year + (x + epoch.timetuple().tm_yday) / 365.25 for x in t])
-    X, Y = (8.0 - ra) % 24.0, dec
+    X, Y = ra_to_x(ra), dec
 
     dX, dY = np.diff(X), np.diff(Y)
     seam = np.abs(dX) > 12
     seg = np.hypot(dX * FIG_W / X_SPAN, dY * FIG_H / Y_SPAN); seg[seam] = 0.0
     arc = np.concatenate([[0.0], np.cumsum(seg)])
 
+    # Optional date window. Arc is re-accumulated inside it so the pacing is
+    # even across the window rather than across the whole track.
+    yr_of = np.array([(epoch + dt.timedelta(days=float(x))).year for x in t])
+    lo_i = int(np.argmax(yr_of >= args.from_year)) if args.from_year else 0
+    hi_i = (len(t) - 1 - int(np.argmax(yr_of[::-1] <= args.to_year))
+            if args.to_year else len(t) - 1)
+    if hi_i <= lo_i:
+        raise SystemExit("Empty date window.")
+
     n_frames = int(args.seconds * args.fps)
     if args.pace == "arc":
-        frames = np.searchsorted(arc, np.linspace(0, arc[-1], n_frames))
+        a0, a1 = arc[lo_i], arc[hi_i]
+        frames = np.searchsorted(arc, np.linspace(a0, a1, n_frames))
     else:
-        frames = np.searchsorted(t, np.linspace(t[0], t[-1], n_frames))
-    frames = frames.clip(0, len(t) - 1)
+        frames = np.searchsorted(t, np.linspace(t[lo_i], t[hi_i], n_frames))
+    frames = frames.clip(lo_i, hi_i)
 
     fig, ax = plt.subplots(figsize=(FIG_W, FIG_H), dpi=DPI)
     fig.patch.set_facecolor(SURFACE); ax.set_facecolor(SURFACE)
+    # Fix the limits up front: the backdrop needs them to decide which
+    # constellation names fall on the chart, and adding its collections would
+    # otherwise drag the autoscale around.
+    ax.set_xlim(0, 24); ax.set_ylim(-70, 80)
     for h in range(0, 25, 2): ax.axvline(h, color=FAINT, lw=0.8, zorder=1)
     for dd in range(-60, 81, 20): ax.axhline(dd, color=FAINT, lw=0.8, zorder=1)
     ax.axhline(0, color="#3a4468", lw=1.3, zorder=1)
-    for rah, dcd, nm in CONST:
-        ax.text((8.0 - rah) % 24.0, dcd, nm, color=LABEL, fontsize=9,
-                ha="center", va="center", zorder=3, alpha=0.8)
+    if args.stars > 0:
+        import sky_backdrop
+        if not sky_backdrop.draw_backdrop(ax, ra_to_x, max_mag=args.stars,
+                                          label_size=8.5):
+            print("  no star data; run fetch_constellation_data.py once")
+            _fallback_labels(ax)
+    else:
+        _fallback_labels(ax)
     bounds = [0] + list(np.where(seam)[0] + 1) + [len(X)]
     for a, b in zip(bounds[:-1], bounds[1:]):
         if b - a > 1:
             ax.plot(X[a:b], Y[a:b], color="#3a2a2a", lw=1.4, zorder=4)
 
-    norm = Normalize(yrs.min(), yrs.max())
+    if lo_i > 0:      # what the object already did, so the window has context
+        for a, b in zip(bounds[:-1], bounds[1:]):
+            e = min(b, lo_i + 1)
+            if e - a > 1:
+                ax.plot(X[a:e], Y[a:e], color="#6b4a3a", lw=2.0, zorder=5)
+
+    norm = Normalize(yrs[lo_i:hi_i + 1].min(), yrs[lo_i:hi_i + 1].max())
     trail = LineCollection([], cmap=RAMP, norm=norm, linewidth=3.0, zorder=6)
     ax.add_collection(trail)
     glow, = ax.plot([], [], "o", ms=28, color="#ffb27a", alpha=0.22, zorder=8)
     head, = ax.plot([], [], "o", ms=12, color=HEAD, mec="#d95926", mew=2.2, zorder=9)
 
-    ax.set_xlim(0, 24); ax.set_ylim(-70, 80)
+    ax.set_xlim(0, 24); ax.set_ylim(-70, 80)   # re-assert: add_collection autoscales
     ax.set_xticks(range(0, 25, 2))
-    ax.set_xticklabels([f"{int((8 - h) % 24)}ʰ" for h in range(0, 25, 2)])
+    ax.set_xticklabels([tick_label(h) for h in range(0, 25, 2)])
     ax.set_yticks(range(-60, 81, 20))
     ax.set_yticklabels([f"{q:+d}°" for q in range(-60, 81, 20)])
     ax.tick_params(colors=MUTED, labelsize=10)
@@ -148,8 +224,9 @@ def main() -> int:
     ax.set_xlabel("right ascension", color=MUTED, fontsize=11)
     ax.set_ylabel("declination", color=MUTED, fontsize=11)
     pace_txt = ("at constant apparent speed" if args.pace == "arc" else "in real time")
-    ax.set_title(f"A black hole crosses the sky — {epoch.year} to "
-                 f"{(epoch + dt.timedelta(days=float(t[-1]))).year}, {pace_txt}",
+    y_lo = (epoch + dt.timedelta(days=float(t[lo_i]))).year
+    y_hi = (epoch + dt.timedelta(days=float(t[hi_i]))).year
+    ax.set_title(f"A black hole crosses the sky — {y_lo} to {y_hi}, {pace_txt}",
                  color=INK, fontsize=15, loc="left", pad=12)
     readout = ax.text(0.985, 0.055, "", transform=ax.transAxes, ha="right",
                       va="bottom", color=INK, fontsize=16, family="monospace",
@@ -165,11 +242,11 @@ def main() -> int:
 
     def draw(n):
         i = frames[n]
-        j = max(1, i)
-        ok = ~seam[:j]
-        pts = np.array([X[:j + 1], Y[:j + 1]]).T.reshape(-1, 1, 2)
+        j = max(lo_i + 1, i)
+        ok = ~seam[lo_i:j]
+        pts = np.array([X[lo_i:j + 1], Y[lo_i:j + 1]]).T.reshape(-1, 1, 2)
         trail.set_segments(np.concatenate([pts[:-1], pts[1:]], axis=1)[ok])
-        trail.set_array(yrs[:j][ok])
+        trail.set_array(yrs[lo_i:j][ok])
         head.set_data([X[i]], [Y[i]]); glow.set_data([X[i]], [Y[i]])
         w = epoch + dt.timedelta(days=float(t[i]))
         nxt = frames[min(n + 1, len(frames) - 1)]
