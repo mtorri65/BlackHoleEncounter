@@ -515,7 +515,41 @@ def build_sim(params):
         name="BH",
     )
 
-    # Asteroid belt tracers (massless)
+    # Asteroid belt tracers (massless).
+    #
+    # Elements are handed to REBOUND, which solves Kepler's equation and does the
+    # perifocal -> inertial rotation itself. An earlier version built the state
+    # vectors by hand and got three things wrong; they are recorded here because
+    # any output from a run predating this fix carries them:
+    #
+    #   1. The velocity was set perpendicular to the radius (a circular-orbit
+    #      direction) while its magnitude came from vis-viva. That makes r an
+    #      apsis, so *every* tracer started at perihelion or aphelion and the
+    #      realised eccentricity collapsed to ~e|cos M + e|/(1 + e cos M) --
+    #      mean 0.049 against the 0.075 requested, 65% of intended. Since
+    #      q = a(1-e) decides whether a tracer becomes planet-crossing, this fed
+    #      straight into the hazard estimate.
+    #   2. Inclination was applied as z = r sin(i) without shrinking x and y, so
+    #      |r| was inflated by sqrt(1 + sin^2 i) -- up to 1.5%, which pushed the
+    #      realised semi-major axis outside its own configured range (max 3.598 AU
+    #      for a belt specified as 2.0-3.5). With vz = 0 alongside z != 0 the
+    #      realised inclination was arctan(sin i), capping at 9.85 deg not 10.
+    #   3. Mean anomaly was fed into the orbit equation, which takes *true*
+    #      anomaly. Uniform-in-M is the correct "random snapshot in time";
+    #      uniform-in-nu over-samples perihelion, where bodies linger least.
+    #
+    # omega and Omega were also never sampled at all, leaving the belt with no
+    # independent apsidal or nodal orientation. They are now drawn uniformly.
+    #
+    # NOTE ON THE DISTRIBUTION (not a bug -- a modelling choice worth knowing):
+    # uniform a/e/i is *not* the real main belt. There is no depletion at the
+    # Kirkwood gaps (3:1 at 2.50 AU, 5:2 at 2.82, 7:3 at 2.96, 2:1 at 3.28), and
+    # the real e and i distributions are roughly Rayleigh (mean e ~0.14, mean
+    # i ~10 deg, tails to 0.3 and 30 deg) rather than uniform with hard cutoffs.
+    # Resonant objects are exactly the ones most easily driven onto
+    # planet-crossing orbits, so a gap-free belt likely *overstates* the absolute
+    # hazard. Relative comparisons between runs remain sound: the seed is fixed,
+    # so every run in a sweep sees the identical belt.
     n_belt = int(params.get("n_belt", 4000))
     rng = np.random.default_rng(42)
     belt_start = sim.N
@@ -523,20 +557,27 @@ def build_sim(params):
     e_b = rng.uniform(0.0, 0.15, n_belt)
     i_b = np.radians(rng.uniform(0.0, 10.0, n_belt))
     M_b = rng.uniform(0.0, 2 * np.pi, n_belt)
+    om_b = rng.uniform(0.0, 2 * np.pi, n_belt)
+    Om_b = rng.uniform(0.0, 2 * np.pi, n_belt)
 
+    # The Sun is at the origin at rest until move_to_com() below, so passing it
+    # as primary is equivalent to the heliocentric frame these elements are in --
+    # but stating it explicitly keeps that true if the construction order changes.
+    sun = sim.particles["Sun"]
     for k in range(n_belt):
-        a_k, e_k, i_k, M_k = a_b[k], e_b[k], i_b[k], M_b[k]
-        r_k = a_k * (1.0 - e_k * e_k) / (1.0 + e_k * math.cos(M_k))
-        x = r_k * math.cos(M_k)
-        y = r_k * math.sin(M_k)
-        z = r_k * math.sin(i_k)
-        v_circ = math.sqrt(G_AU3_Msun_day2 * MSUN * (2.0 / r_k - 1.0 / a_k))
-        vx = -v_circ * math.sin(M_k)
-        vy = v_circ * math.cos(M_k)
-        vz = 0.0
-        sim.add(m=0.0, x=x, y=y, z=z, vx=vx, vy=vy, vz=vz)
+        sim.add(m=0.0, a=a_b[k], e=e_b[k], inc=i_b[k],
+                M=M_b[k], omega=om_b[k], Omega=Om_b[k], primary=sun)
 
     belt = {"start": belt_start, "count": n_belt}
+
+    # Tell REBOUND the tracers are massless. Without this it defaults to treating
+    # every particle as gravitationally active and evaluates the full N^2/2 pair
+    # loop. The physics is unaffected either way -- a force scales with the source
+    # mass, so m=0 particles pull on nothing -- but the cost is not: measured on a
+    # 2000-tracer belt, one year of integration takes 105.6 s unset against 2.0 s
+    # with N_active, a 52x difference. That turns a ~9 hour run into ~11 minutes,
+    # and is the likely reason belt runs were abandoned (n_belt: 0).
+    sim.N_active = belt_start
 
     # Sanity check: ensure key hashes are present (helps avoid anonymous archives)
     for _nm in ["Sun","Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Moon","BH"]:
@@ -1696,8 +1737,25 @@ def run_one(params, sub_dir: Path, params_src_path: Path):
             )
 
     # Belt BEFORE
+    #
+    # mu = G*Msun, NOT G*(Msun + M_bh). These are *heliocentric* elements, so the
+    # primary is the Sun alone. Treating Sun+BH as one central mass would only be
+    # meaningful if the BH sat at the barycentre, and it does not -- it is 863 AU
+    # away at the start and 819 AU at the end.
+    #
+    # This was previously mu_sun_bh, which inflated mu by 10% for a 0.1 Msun hole
+    # and biased every recorded element: a belt configured as a = 2.0-3.5,
+    # e = 0-0.15 was reported as a = 1.79-3.26, e = 0-0.227. Because the hazard
+    # analysis keys off q = a(1-e), that pushed perihelia inward (minimum q read
+    # 1.46 AU against a true 1.74) and inflated the planet-crossing counts.
+    # The dynamics were never affected -- REBOUND does not use this mu -- only
+    # the reported elements and everything downstream of them.
+    #
+    # The planet snapshots below already used sim.G * MSUN; this makes the two
+    # consistent.
+    mu_helio = sim.G * MSUN
     if has_belt:
-        df_b = snapshot_belt(sim, belt["start"], belt["count"], "before", mu=mu_sun_bh)
+        df_b = snapshot_belt(sim, belt["start"], belt["count"], "before", mu=mu_helio)
         df_b.to_csv(_prefix_path(sub_dir, "belt_run_before.csv"), index=False)
         print("Wrote belt_run_before.csv")
     else:
@@ -1734,7 +1792,7 @@ def run_one(params, sub_dir: Path, params_src_path: Path):
 
     # Belt AFTER
     if has_belt:
-        df_a = snapshot_belt(sim, belt["start"], belt["count"], "after", mu=mu_sun_bh)
+        df_a = snapshot_belt(sim, belt["start"], belt["count"], "after", mu=mu_helio)
         df_a.to_csv(_prefix_path(sub_dir, "belt_run_after.csv"), index=False)
         print("Wrote belt_run_after.csv")
     else:
