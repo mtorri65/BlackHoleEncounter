@@ -19,9 +19,9 @@ produces each table is given with it.
 
 Companion documents: [`SCENARIO_mars_window.md`](SCENARIO_mars_window.md) — the
 chosen run from this sweep, studied in detail — and
-[`SCENARIO_timeline.md`](SCENARIO_timeline.md), its narrative century.
-[`SCENARIO_mercury_capture.md`](SCENARIO_mercury_capture.md) covers the retired
-2027 sweep and is kept for the record.
+[`SCENARIO_timeline.md`](SCENARIO_timeline.md), its narrative century, and
+[`SCENARIO_post_flyby_system.md`](SCENARIO_post_flyby_system.md), which works out
+what the surviving system looks like.
 
 ---
 
@@ -368,8 +368,51 @@ e_vec flipped** — is exact for every inclination and is the one to rely on.
 intended; only the labels are permuted (the folder named `om0` holds the ω = 180°
 orbit). Sweep statistics, the impact ranking and all climate results are
 unaffected. Relative claims between two runs also survive, since every run
-receives the same transformation — including the mirror-twin identity asserted in
-[`SCENARIO_mercury_capture.md`](SCENARIO_mercury_capture.md).
+receives the same transformation.
+
+### 7a. The sweep is exactly twofold redundant
+
+Separately from the labelling issue above, the grid contains a genuine symmetry:
+
+> **`(i, Ω, ω)` and `(−i, Ω+180°, ω+180°)` are the same physical orbit.**
+
+The orbit normal is `(sin i sin Ω, −sin i cos Ω, cos i)`; negating `i` and adding
+180° to `Ω` flips both signs in each of the first two components, leaving the
+normal unchanged. Rotating the node and the argument of periapsis by 180°
+together leaves periapsis pointing the same way in space. Same plane, same
+direction, same apsidal orientation — the same encounter.
+
+**Every one of the 4032 runs has such a partner**, so the sweep covers about
+**2016 distinct configurations, each integrated twice.** Consequences:
+
+- **Roughly half the compute is redundant** (~14 of ~28 hours). Constraining
+  `Ω ∈ [0°, 180°)` or `i ≥ 0` would halve a future sweep at no cost in coverage.
+- **Counts and percentages have an effective sample size of ~2016.** Means and
+  medians are unbiased, but every tally quoted over "4032 runs" — 3904 usable,
+  810 Earth-like, 32 captures — rests on half the independent information it
+  appears to. The 32 captures are 16 configurations.
+
+**The pairs are also an accidental convergence test.** Both members should be
+identical, so their divergence measures the integration's numerical chaos
+directly. Measured on the impact `Score`:
+
+| | relative divergence |
+|---|---|
+| identical to 1e-12 | 4.1% of pairs |
+| median | 7.5×10⁻¹⁰ |
+| 90th percentile | 6.3×10⁻⁷ |
+| max | 6.8×10⁻² |
+
+The median run holds ~9 significant figures over 316 years, so individual
+outcomes are sound. But divergence concentrates in the violent runs — the top
+`Score` quartile diverges ~10× more than the quietest — and a few pairs disagree
+at the percent level. **Treat any absolute claim about a single high-`Score` run
+with that error bar in mind.**
+
+*(A now-deleted document, `SCENARIO_mercury_capture.md`, noted this symmetry for
+one run of the retired sweep and described the twins as "bit-identical". That is
+true only for the 4.1% that agree to 1e-12: the mirrored initial state differs at
+roundoff, and chaos amplifies it.)*
 
 **Where it bites:** any absolute geometric statement about a *single named run*
 — "in run `…om270` the BH approached from direction X". Note that plots reading

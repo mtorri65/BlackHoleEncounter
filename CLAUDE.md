@@ -4,14 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-A flat collection of ~26 standalone Python scripts simulating a close flyby of a passing
+~42 standalone Python scripts in the repo root, simulating a close flyby of a passing
 black hole through the solar system (REBOUND N-body integration), plus post-processing,
-visualization, and a separate analysis thread that checks whether the BH's astrometric
-signature would be detectable in real Gaia DR3 data. There is no package structure — every
-script is run directly from the repo root.
+visualization, a climate thread that asks what the perturbed orbits do to Earth and Mars,
+and a separate analysis thread that checks whether the BH's astrometric signature would be
+detectable in real Gaia DR3 data. Every script is run directly from the repo root.
+
+The one exception to "no packages" is `orbital_climate/`, an actual importable package
+(`ebm.py`, `mars.py`, `insolation.py`, `kepler.py`, `sweep.py`, `experiment.py`,
+`config.py`, `cli.py`) holding the energy-balance climate model. Root-level scripts import
+from it; it is not run directly except through `orbital_climate/cli.py`. Its physics
+background is in `orbital-climate-model-context.md`.
 
 `Script_Summaries.pdf` in the repo root has a full purpose/inputs/outputs/techniques
 write-up for every script — consult it before re-deriving what a script does from scratch.
+**It is out of date**: it dates from 2026-07-23, and 16 of the 42 scripts have been added
+or substantially changed since — the whole scenario-selection and climate thread, all the
+sky-track/export tooling, and edits to the core engine itself. Treat a missing entry as
+"not yet written up", not "no such script", and check a script's own docstring before
+trusting the PDF's account of it.
 
 ## Environment / commands
 
@@ -29,7 +40,16 @@ write-up for every script — consult it before re-deriving what a script does f
   comment (`replay_archive.py`, `run_animation.py`, `convert_npz_to_csv.py`,
   `overlay_plot_v2.py`) — edit those constants before running.
 - MP4-producing scripts (`animate_snapshots3D_1.py`, `make_inner_3au_videos_from_archive.py`,
-  and the core engine when `write_mp4: true`) require `ffmpeg` on PATH.
+  and the core engine when `write_mp4: true`) require `ffmpeg` on PATH. `animate_sky_track.py`
+  is the exception — it prefers the binary bundled with the `imageio-ffmpeg` package and only
+  falls back to PATH, so it works with no system-wide install.
+- **One-time setup for the sky charts**: `python fetch_constellation_data.py` downloads the
+  Hipparcos catalogue and Stellarium's constellation figures and distils them to
+  `sky_stars.csv` + `sky_constellation_lines.csv` (~250 KB total; the 53 MB source is
+  discarded). `.gitignore` excludes `*.csv`, **so these two files are never committed and a
+  fresh clone will not have them** — re-run the fetch. Without them `sky_backdrop.py` prints
+  a hint and falls back to plain constellation name labels, so charts still render; the star
+  field just silently disappears, which is easy to misread as a plotting bug.
 
 ## Architecture
 
@@ -94,7 +114,7 @@ Gaia-analysis scripts) by auto-discovering the most recently modified matching f
 independently runnable — they implicitly depend on a prior core-engine run having already
 produced the expected files in the expected place.
 
-### Three tiers of scripts
+### Five tiers of scripts
 
 1. **Core engine** — `solar_system_bh_rebound26.py`. Run this first.
 2. **Post-processing / visualization** (consume core-engine output): orbit comparison
@@ -107,7 +127,8 @@ produced the expected files in the expected place.
    (`plot_bh_perihelion.py`, `make_inner_3au_videos_from_archive.py`,
    `animate_snapshots3D_1.py`, `run_animation.py`, `convert_npz_to_csv.py`, the two
    `gallery_heliocentric_*` interactive viewers, `inspect_archive_hashes.py`,
-   `replay_archive.py`, `count_planets_run_rows.py`).
+   `replay_archive.py`, `reconstruct_trajectories_from_archive.py`,
+   `count_planets_run_rows.py`).
 3. **Gaia DR3 detectability analysis** (independent thread — cross-references the core
    engine's BH RA/Dec track against real Gaia astrometry to assess whether the BH's
    point-lens microlensing signature would be observable under a synthetic Vera Rubin/LSST
@@ -118,6 +139,47 @@ produced the expected files in the expected place.
    `distance_from_bh_on_first_detect.py`, `overlay_bh_on_vr_image.py`, `overlay_plot_v2.py`.
    `centroid_motion.py` is not independently runnable — it's a code fragment that assumes
    variables already defined by the `astrometric_shift*.py` scripts.
+4. **Scenario selection & climate** (the "which run is interesting, and what would living
+   there be like" thread; runs in this order): `rank_run_impact.py` ranks a whole sweep by
+   how much each run disturbed the system; `find_bh_captures.py` separates planets that
+   merely leave from those that leave *with* the BH, which the per-run deltas cannot
+   distinguish on their own; `extract_earth_elements.py` / `extract_mars_elements.py`
+   recover full post-flyby elements, since `__planets_run_deltas.csv` carries only a, e, q;
+   then `climate_from_simulations.py` / `climate_mars_from_simulations.py` drive the
+   `orbital_climate/` energy-balance model over every run. Mars's habitability verdict comes
+   from `orbital_climate/mars.py::liquid_water_possible`, which requires the surface to be
+   above the triple point **and** below boiling at the local pressure — a weaker
+   triple-point-only test is kept alongside as `above_water_triple_point` for comparison,
+   and the two disagree by a large factor, so do not substitute one for the other.
+5. **Sky-track charts** (where the BH appears on the sky, for the narrative documents):
+   `animate_sky_track.py` is the entry point, producing MP4/GIF animations paced either by
+   constant apparent speed (`--pace arc`, the default) or linearly in time; `--from-year` /
+   `--to-year` restrict the window. `sky_backdrop.py` draws the star field and constellation
+   figures behind it, and `fetch_constellation_data.py` builds the data those need (see
+   Environment above — this is a required one-time step). `export_bh_track.py` and
+   `export_bh_track_cdc.py` emit the track for external planetarium software instead, as
+   generic CSV and Cartes du Ciel user-object format. `plot_sky_tracks.py` is older and
+   unrelated in output: static RA/Dec tracks of the BH *and the planets* during the flyby.
+
+### Sky-chart conventions
+
+Three things about the sky charts are easy to get wrong silently:
+
+- **Frame.** The simulation runs in equatorial J2000, and Hipparcos positions are ICRS,
+  so stars and BH track share a frame directly and **no precession is applied**. Charts
+  drawn for a historical epoch in "apparent" coordinates would need it — J2000 and
+  equinox-of-date differ by ~1.6° at 1885, far above plotting tolerance. `export_bh_track.py`
+  therefore writes *both*, and the chart's own setting decides which column to use.
+- **Orientation.** `animate_sky_track.py` sets it with `RA_LEFT_EDGE` / `RA_RIGHT`. The
+  default is the star-atlas convention — RA increasing to the *left*, axis reading 24ʰ→0ʰ —
+  so the chart can be compared against a printed atlas. Flipping `RA_RIGHT = True` reads
+  more naturally as a graph but is a mirror image of the sky, which is not obvious by
+  inspection unless you check an asymmetric asterism.
+- **Seam.** Independent of orientation: the RA wrap point is placed where the track does not
+  cross it. The current scenario spans RA 5.05ʰ–23.17ʰ, so seaming at 0ʰ draws it unbroken;
+  an 8ʰ seam cut it into two disconnected pieces. Constellation figures that straddle the
+  seam are drawn twice, shifted, and name positions use a mean of unit vectors so they do
+  not land halfway across the sky.
 
 `time_dilation_tides.py` is a standalone physics illustration (Schwarzschild tidal/
 time-dilation effects near the BH) with no dependency on the rest of the pipeline.

@@ -13,6 +13,43 @@ the REBOUND black-hole-flyby sweeps in this repository.
 
 ---
 
+## Which sweep the numbers describe
+
+**Read this before quoting any figure from this document.**
+
+Results here come from **two different sweeps**, and the sections are marked
+accordingly:
+
+| | retired sweep | **current sweep** |
+|---|---|---|
+| tag | `20260724_230314` | **`20260811_184731`** |
+| epoch | 1873-09-01 | **1885-09-01** |
+| BH perihelion | ~2027 | **2047** |
+| `v_inf` | 10 km/s | **25 km/s** |
+| runs | 672 | **4032** |
+| on disk? | **deleted** | yes |
+
+- **Parts I–IV (§2–§5)** describe how the model was built and validated. Physics,
+  not sweep output — unaffected by the change, except §5.4 and §5.7–§5.8, which
+  have been restated for the current sweep.
+- **§6.1–§6.4, §7.6–§7.7** have been **regenerated against the current sweep**.
+- **Transient, two-surface, Milankovitch and Sellers results have been removed**
+  (they occupied §6.5–§6.8). They were measured on the retired sweep and were never
+  re-run, since each needs a separate pass of the climate model with non-default
+  options. Rather than leave stale numbers behind a warning label, the sections are
+  gone and §6.5 now records what they covered, what survives of them, and how to
+  regenerate. **This report currently has no results for transient behaviour, the
+  land/ocean split, or nonlinear OLR.**
+- **§8 (corrections)** deliberately preserves superseded numbers where they record
+  a claim that turned out wrong. That is the point of the section — do not "fix"
+  those.
+
+The current sweep's derived products live in the repository root as
+`simulations/20260811_184731_{climate,mars_climate,earth_elements,impact_ranking,bh_captures}.csv`.
+Every regenerated figure below is computed from those files.
+
+---
+
 ## Table of contents
 
 1. [Goal and overall architecture](#1-goal-and-overall-architecture)
@@ -20,7 +57,7 @@ the REBOUND black-hole-flyby sweeps in this repository.
 3. [Part II — The energy-balance model](#3-part-ii--the-energy-balance-model)
 4. [Part III — Two-surface land/ocean extension](#4-part-iii--two-surface-landocean-extension)
 5. [Part IV — Bridging REBOUND to the climate model](#5-part-iv--bridging-rebound-to-the-climate-model)
-6. [Part V — Results](#6-part-v--results)
+6. [Part V — Results](#6-part-v--results) — incl. [§6.9 the capture census](#69-where-the-planets-end-up--the-capture-census)
 7. [Part VI — Mars: a condensing atmosphere](#7-part-vi--mars-a-condensing-atmosphere)
 8. [Corrections and negative results](#8-corrections-and-negative-results)
 9. [Bugs found and fixed](#9-bugs-found-and-fixed)
@@ -43,7 +80,7 @@ a REBOUND BH-flyby sweep. That yields a two-stage pipeline:
 
 ```
 REBOUND sweep  ──►  Earth's post-flyby orbital elements  ──►  seasonal EBM
-  (672 runs)         (a, e, obliquity, λ_p, year length)      (climate outcome)
+ (4032 runs)         (a, e, obliquity, λ_p, year length)      (climate outcome)
 ```
 
 The two halves are cleanly separable: REBOUND determines *what orbit Earth ends
@@ -132,7 +169,8 @@ and `a_ice` where `T < T_ice`.
 
 The linear OLR `A + B·T` shown here is the default. A nonlinear alternative
 (Sellers 1969) was added later once its validity range proved too narrow for
-this sweep — see §10 for the failure analysis and §6.8 for the consequences.
+this sweep — see §10 for the failure analysis. The sweep-wide consequences were
+measured only on the retired sweep and have been removed pending regeneration (§6.5).
 
 ### 3.2 Discretisation
 
@@ -308,7 +346,7 @@ Neither is in that file.
 
 Also: a YAML `sweep:` block computes a **Cartesian product**, but these
 parameters are **paired** — run *N*'s `(a, e, ε, λ_p)` belong together. Sweeping
-662 values of `a` against 662 values of `e` would give 438,244 physically
+3966 values of `a` against 3966 values of `e` would give 15.7 million physically
 meaningless combinations. Hence a bridge script rather than configuration.
 
 ### 5.2 The key discovery: the simulation frame
@@ -346,23 +384,34 @@ Three independent cross-checks:
 
 1. **Perihelion date.** The simulation's minimum heliocentric distance falls on
    **Jan 1** — and `λ_p ≈ 282°` means exactly "perihelion in early January."
-2. **Zero variance.** All 672 runs return *identical* pre-flyby values to every
-   digit, as they must, since all start from the same epoch.
-3. **Bound count.** 662/672 Earth-bound, matching the independent count from the
-   deltas CSVs exactly.
+2. **Near-zero variance.** All runs must return the same pre-flyby values, since
+   they all start from the same epoch. In the retired sweep they were identical to
+   every digit. In the current sweep they agree only to ~10⁻⁵ relative — 1697
+   distinct values of `a` across 4032 runs, spanning 1.75×10⁻⁵ AU. This is **not
+   a regression in the recovery**: it is float32 rounding introduced by the
+   Parquet switch (§11), where the retired sweep's xlsx stored full-precision
+   float64 as text. The check still passes, but as a tolerance rather than an
+   equality — see §8 for why the tolerance is larger than §11 originally claimed.
+3. **Bound count.** 3966/4032 Earth-bound in the current sweep (662/672 in the
+   retired one), matching the independent count from the deltas CSVs exactly.
 
-### 5.4 On the 1873 epoch and precession
+### 5.4 On the 19th-century epoch and precession
 
-The runs start at 1873-09-01 (so BH perihelion falls in ~2027) and integrate
-112,420 days (~308 years). Does the early epoch invalidate the J2000 claim?
+The current runs start at **1885-09-01** (so BH perihelion falls in 2047) and
+integrate 115,342 days (~316 years). The retired sweep started 1873-09-01 for a
+2027 perihelion. The argument below is unchanged by the 12-year shift — it is
+about the size of the precession term, which moves by well under a degree — and
+is stated for the current epoch.
+
+Does the early epoch invalidate the J2000 claim?
 
 **No — J2000 is a fixed frame by definition**, the mean equator and equinox *at*
 2000.0. Skyfield/JPL return ICRF coordinates for *any* query date; asking for
-1873 gives 1873 positions *expressed in the J2000 frame*.
+1885 gives 1885 positions *expressed in the J2000 frame*.
 
 But there is a real approximation: Earth's **actual** spin axis precesses on a
-25,772-year cycle at ~20″/yr, so it was ~0.70° from `ẑ_J2000` in 1873 and
-~1.01° the other way by 2181. Using `ẑ` is effectively a mid-run average.
+25,772-year cycle at ~20″/yr, so it was ~0.64° from `ẑ_J2000` in 1885 and
+~1.12° the other way by 2201. Using `ẑ` is effectively a mid-run average.
 
 **Consequence:** the true `λ_p` drifts ~**4.3°** over the run relative to the
 fixed-frame value. This is negligible here because (a) the BH-induced `λ_p`
@@ -373,7 +422,12 @@ regardless of frame choice; and (c) before/after both use the same fixed `ẑ`, 
 
 ### 5.5 Extraction performance
 
-Archives were disabled for this sweep, so the ~220 MB `*__orbits__*.xlsx` files
+> **Historical.** This describes the retired sweep, where the only source was
+> xlsx. The current sweep writes Parquet directly and the head/tail rows come
+> out of it in milliseconds, so the optimisation below no longer runs — see §11.
+> It is kept because the measurement is what justified changing the engine.
+
+Archives were disabled for that sweep, so the ~220 MB `*__orbits__*.xlsx` files
 were the only source. Only the **first and last rows** are needed.
 
 | Method | Per run | Full sweep |
@@ -400,22 +454,37 @@ The linear OLR (`A + B·T`) is calibrated near 288 K. Runs far outside that
 regime still return numbers, but fictitious ones. Excluded by default:
 `a ≥ 3 AU` or `e ≥ 0.9`.
 
+*Current sweep (`20260811_184731`).*
+
 | | count |
 |---|---|
-| Total runs | 672 |
-| Earth unbound (ejected) | 10 |
-| Outside validity band | 18 |
-| **Usable** | **644 (96%)** |
+| Total runs | 4032 |
+| Earth unbound (ejected) | 66 |
+| Excluded (unbound or outside band) | 128 |
+| **Usable** | **3904 (97%)** |
 
-### 5.8 Distribution of recovered elements (662 bound runs)
+Earth survives bound in **98.4%** of runs, against 98.5% in the retired sweep —
+the higher `v_inf` did not measurably change Earth's odds of staying.
+
+### 5.8 Distribution of recovered elements (3966 bound runs)
+
+*Current sweep.*
 
 | | min | median | max |
 |---|---|---|---|
-| `a` [AU] | 0.632 | 1.038 | 1097.6 |
-| `e` | 0.005 | 0.126 | 0.9992 |
-| obliquity [°] | 6.1 | 23.29 | 74.4 |
-| **λ_p** [°] | 0.2 | 172.1 | 359.4 |
-| year length [d] | 184 | 386 | 13.3 M |
+| `a` [AU] | 0.458 | 0.985 | 82.8 |
+| `e` | 0.003 | 0.127 | 0.990 |
+| obliquity [°] | 3.6 | 23.66 | 131.2 |
+| **λ_p** [°] | 0.8 | 222.4 | 359.4 |
+| year length [d] | 113 | 357 | 275,000 |
+
+Two differences from the retired sweep are worth noting. The median `a` is now
+**0.985 AU against 1.038** — the faster flyby moves Earth *inward* on median
+rather than outward, which propagates directly into §6.1. And obliquity now
+reaches **131°**, past 90°, meaning some runs flip Earth's spin axis into
+retrograde; the old sweep's maximum was 74°. The extreme `a` tail is far shorter
+(82.8 AU vs 1097.6): a 25 km/s encounter is over faster and imparts less energy
+to the marginal cases.
 
 **λ_p spans essentially the full circle** — recovering it was necessary, not
 optional. Freezing it at 283° would have been a genuine error.
@@ -424,35 +493,59 @@ optional. Freezing it at 283° would have been a genuine error.
 
 ## 6. Part V — Results
 
+*§6.1–§6.4 regenerated against the current sweep (`20260811_184731`), linear OLR,
+single surface — the same configuration as the retired-sweep figures they replace,
+so the comparison is like for like.*
+
 ### 6.1 Equilibrium climate across the sweep
 
-| | |
-|---|---|
-| Pre-flyby baseline | **288.19 K** (single-surface) |
-| Median outcome | 278.97 K (**−9.2 K**) |
-| Range | 187.8 → 559.7 K |
-| Recognisably Earth-like (±10 K) | **138 runs (21%)** |
-| Snowball (fully glaciated) | **250 runs (39%)** |
+| | current (4032) | retired (672) |
+|---|---|---|
+| Pre-flyby baseline | **288.19 K** | 288.19 K |
+| Median outcome | **293.26 K (+5.1 K)** | 278.97 K (−9.2 K) |
+| Range | **185.2 → 976.4 K** | 187.8 → 559.7 K |
+| Recognisably Earth-like (±10 K) | **810 runs (20.7%)** | 138 (21%) |
+| Snowball (fully glaciated) | **1182 runs (30.3%)** | 250 (39%) |
+| Runaway flagged | **894 runs (22.9%)** | — |
+
+**The median sign flipped.** The retired sweep cooled Earth by 9.2 K on median;
+the current one *warms* it by 5.1 K. This is not a model change — it follows
+directly from §5.8, where median `a` moved from 1.038 to 0.985 AU. A faster
+encounter tends to drop Earth inward rather than fling it outward, and the
+climate result is the straightforward consequence.
+
+The proportion of Earth-like outcomes is essentially unchanged (20.7% vs 21%),
+which is reassuring: the *spread* of outcomes is a property of the sweep geometry,
+while the *centre* tracks where Earth ends up. Snowball fraction falls (30.3% vs
+39%) for the same inward-shift reason, and the hot tail correspondingly extends
+to 976 K — far outside any defensible range, which is what the runaway flag is
+for.
 
 ### 6.2 The ice-albedo bifurcation
 
-The temperature distribution is **bimodal with a forbidden gap at ~235–260 K**.
-Temperatures jump from ~265 K straight to ~230 K around `a ≈ 1.07 AU` with
-nothing in between — the classic Budyko–Sellers ice-albedo catastrophe, which
-emerged from the model rather than being imposed.
+The temperature distribution is **bimodal with a forbidden gap at 231–260 K** —
+*zero* runs out of 3904 land in 235–260 K. Temperatures jump from ~265 K straight
+to ~230 K around `a ≈ 1.07 AU` with nothing in between — the classic
+Budyko–Sellers ice-albedo catastrophe, which emerged from the model rather than
+being imposed.
 
-There is an **overlap zone** (`a = 1.073–1.122 AU`) where both temperate and
+There is an **overlap zone** (`a = 1.071–1.120 AU`) where both temperate and
 snowball outcomes occur, depending on the other orbital parameters.
+
+This is the most robust result in the document: the gap and the overlap zone
+reproduced to within 0.003 AU across two sweeps differing in epoch, encounter
+speed and run count by a factor of six. It is a property of the climate model,
+not of the sampling.
 
 ### 6.3 What controls the outcome
 
-| Predictor | correlation with T |
-|---|---|
-| **Annual-mean insolation `S₀/(4a²√(1−e²))`** | **+0.966** |
-| semi-major axis `a` | −0.790 |
-| longitude of perihelion `λ_p` | +0.593 → **spurious** |
-| eccentricity | +0.110 |
-| obliquity | +0.067 |
+| Predictor | current | retired |
+|---|---|---|
+| **Annual-mean insolation `S₀/(4a²√(1−e²))`** | **+0.978** | +0.966 |
+| semi-major axis `a` | −0.751 | −0.790 |
+| longitude of perihelion `λ_p` | +0.493 → **spurious** | +0.593 |
+| eccentricity | +0.204 | +0.110 |
+| obliquity | +0.190 | +0.067 |
 
 The `λ_p` correlation looked substantial but is **collinearity**: `λ_p` is 42%
 correlated with `a` in this sweep. Controlling for annual insolation collapses
@@ -463,137 +556,71 @@ exactly — `λ_p` shifts *seasonal phasing*, not the annual mean. The residual
 ### 6.4 Orbital disruption ≠ climate disruption
 
 Correlation between the orbital-impact `Score` (from
-[`rank_run_impact.py`](rank_run_impact.py)) and `|ΔT|` is only **+0.586**. A run
-can eject Mercury and Neptune while leaving Earth's climate nearly untouched, so
-the two rankings are genuinely complementary rather than redundant.
+[`rank_run_impact.py`](rank_run_impact.py)) and `|ΔT|` is only **+0.673**
+(+0.586 in the retired sweep). A run can eject Mercury and Neptune while leaving
+Earth's climate nearly untouched, so the two rankings are genuinely complementary
+rather than redundant. The coupling is somewhat tighter in the current sweep but
+the conclusion is unchanged: knowing how violently a run disturbed the system
+still explains under half the variance in what it did to Earth's climate.
 
-### 6.5 Transient adjustment
+### 6.5 Transient, two-surface, Milankovitch and Sellers — *removed, pending regeneration*
 
-| | single surface | two surface |
+Four results sections stood here: transient adjustment, the two-surface
+land/ocean results, the Milankovitch signal and its regime dependence, and the
+sweep re-run under the Sellers nonlinear OLR. Every count and percentage in them
+was measured on the retired 672-run sweep.
+
+**They have been removed rather than left in place behind a warning.** A flagged
+number is still a number, and this report is quoted from. Nothing here now
+describes a sweep that no longer exists.
+
+*(They were §6.5–§6.8. The numbering gap before §6.9 is deliberate: it marks the
+excision, and it keeps external references to §6.9 — the capture census, cited
+from [`SCENARIO_post_flyby_system.md`](SCENARIO_post_flyby_system.md) — resolving.)*
+
+What they established that does *not* depend on those statistics is preserved:
+
+- Temperature overshoot is exactly zero and the approach to equilibrium is
+  monotonic; equilibrium results are robust to initial conditions; a blended heat
+  capacity is not a useful approximation (§8, where all three are recorded as
+  negative results, with their retired-sweep provenance marked).
+- The linear OLR's cold-end failure, the Sellers form that fixes it, and the
+  Simpson–Nakajima runaway ceiling are described in §10.
+- The two-surface formulation itself, its calibration and its validation are
+  Part III (§4) and are unaffected — they are model construction, not sweep
+  output.
+
+**Regenerating them** means three further passes of
+[`climate_from_simulations.py`](climate_from_simulations.py) over the current
+sweep with non-default options (`--two-surface`, `--olr-model sellers`,
+`--transient`); see §12 for the commands. Until then this report has **no current
+results** for transient behaviour, the land/ocean split, or nonlinear OLR, and
+should not be cited for any of the three.
+### 6.9 Where the planets end up — the capture census
+
+*Current sweep. New section: this analysis did not exist when the report was
+first written.*
+
+An ejection and a capture look identical in the per-run deltas — both show a body
+that is no longer bound to the Sun. [`find_bh_captures.py`](find_bh_captures.py)
+separates them with a two-body energy test (`ε = v²/2 − μ/r`) against the black
+hole, evaluated on the final state vectors. Across 4032 runs × 9 bodies (36,288
+body-outcomes):
+
+| outcome | count | share |
 |---|---|---|
-| years to equilibrium (median) | 11 | 15 |
-| peak hemispheric asymmetry | 3.74 K median, 18.29 K max | 4.69 K median, 22.30 K max |
-| …the same at equilibrium | **0.00 K** median | **0.00 K** median |
-| temperature overshoot | **0 everywhere** | **0 everywhere** |
-| ice-edge migration (median) | −6.7° | −7.9° |
-| peak migration rate | up to 44°/yr | up to 30°/yr |
+| still bound to the Sun | 34,116 | 94.0% |
+| unbound from both — **free** | 2,140 | 5.9% |
+| **captured by the black hole** | **32** | **0.09%** |
 
-**The headline transient result:** **198 runs (31%)** show a peak hemispheric
-asymmetry above 5 K that decays to under 1 K, typically peaking in **year 1**.
-Nearly a third of the sweep passes through a substantially lopsided climate that
-leaves **no trace whatsoever** in the equilibrium state — information the
-equilibrium sweep structurally cannot produce.
-
-642 of 644 runs settle within 60 years; median 11, 90th percentile 18. The
-climate reaches its new state within one to two decades.
-
-### 6.6 Two-surface results
-
-Within the defensible 250–300 K band (220 runs), 65 °N seasonal range:
-
-| | median |
-|---|---|
-| Single-surface | 10.3 K |
-| Two-surface, blended | 23.2 K |
-| **Two-surface, land** | **41.2 K** |
-| Two-surface, ocean | 8.5 K |
-
-Global mean essentially unchanged (280.5 → 282.6 K). Snowball count 240 vs 250.
-
-### 6.7 The Milankovitch signal — and the regime dependence
-
-In a **controlled experiment** (`a` fixed at 1.0, `e: 0.0167 → 0.117`, the
-scenario where 65 °N June insolation drops 480 → 400 W/m²):
-
-| Model | 65 °N summer peak change |
-|---|---|
-| Single surface | **−0.04 K** — nothing |
-| Two-surface, **land** | **−7.53 K** |
-| Two-surface, ocean | −0.02 K |
-
-The two-surface model recovers the glacial-inception signal the single-surface
-model entirely missed. With a 7-day land time constant the surface tracks the
-insolation drop almost directly, while the 3.2-year ocean damps it to nothing.
-For reference, the context document cites "~4–6 K direct orbital summer cooling
-at high northern latitudes" — the right magnitude and, crucially, the right sign.
-
-**However, this does not generalise to the whole sweep.** Across all 220
-habitable-band runs:
-
-| 65 °N summer-peak change | single surface | two-surface land |
-|---|---|---|
-| median | **−6.31 K** | **−3.37 K** |
-| runs cooling > 4 K | 138 (63%) | 104 (47%) |
-
-The single-surface model shows *more* cooling. The reason: in this sweep Earth's
-semi-major axis varies from 0.63 to 2.8 AU, so **annual-mean insolation changes
-dominate**. A heavily damped single-surface world has summer ≈ annual mean and
-inherits the full annual-mean cooling; land, sitting well above the annual mean
-in summer, is partly buffered.
-
-**Isolating the mechanism** — restricting to the 72 runs where `a` stayed within
-2% of 1.0 AU (orbital *shape* change only, annual mean preserved at +0.45 K):
-
-| | median |
-|---|---|
-| Single-surface summer | **+0.48 K** (warming) |
-| Two-surface **land** summer | **−0.98 K** (cooling) |
-
-**A sign flip.** With the annual mean held fixed, the single-surface model
-reports summer *warming* while land correctly reports *cooling*.
-
-**Accurate statement:** the two-surface model is right in both regimes, but the
-correction it applies depends on what changed. For pure orbital-**shape**
-changes it reveals a summer signal the old model gets backwards; for large
-orbital-**size** changes it moderates an overestimate.
-
-### 6.8 Nonlinear OLR: re-running the sweep with Sellers
-
-All results above use the **linear** OLR. Re-running the full 644-run sweep with
-`olr_model: sellers` (plus two surfaces) quantifies how much the linear form's
-cold-end failure was distorting the answer.
-
-| | linear | **Sellers** |
-|---|---|---|
-| pre-flyby baseline | 288.19 K | **288.60 K** |
-| median outcome | 278.97 K | **275.61 K** |
-| coldest run | 187.8 K | **144.5 K** |
-| hottest run | 559.7 K | **403.4 K** |
-| snowball runs | 240 | **298** |
-
-**The cold band moved exactly as predicted.** For the 236 runs the linear form
-placed below 230 K, Sellers is **16.1 K colder** (median). That is the
-under-cooling bias diagnosed in §9 being removed: once a freezing atmosphere
-radiates toward blackbody instead of having its emission collapse toward zero,
-those worlds shed heat properly and settle colder. More of them cross into full
-glaciation, so the snowball count rises 240 → 298.
-
-**The hot tail contracted** from 559.7 K to 403.4 K, because Sellers emits far
-more at high temperature than a linear extrapolation does.
-
-**Runaway detection.** 102 runs (16%) exceed the Simpson–Nakajima ceiling. For
-those the linear model had been reporting temperatures up to 559.7 K for planets
-that would in reality have lost their oceans entirely. They are now flagged
-rather than silently quoted.
-
-**Net effect on validity.** Under the linear form only ~35% of runs sat in a
-defensible range. With Sellers the cold population (44% of runs, 176–230 K) is
-physically meaningful, and the honestly-unmodellable remainder is the 16%
-runaway set:
-
-| regime under Sellers | runs | share |
-|---|---|---|
-| cold, now physical (< 230 K) | 298 | 46% |
-| defensible (230–300 K) | 158 | 25% |
-| stretched (300–320 K) | 96 | 15% |
-| **runaway — no equilibrium exists** | **92–102** | **~16%** |
-
-The glacial-inception population also grows: **370 runs (57%)** show >4 K of
-high-latitude summer cooling over land, against 47% under the linear form.
-
-Transient behaviour is largely unchanged in character — median 16 years to
-equilibrium (vs 15), peak hemispheric asymmetry 5.39 K decaying to 0.16 K, and
-**temperature overshoot still exactly zero in every run**.
+**Capture is rare — roughly one body-outcome in a thousand, and 1.5% of all
+losses.** This is the quantitative answer to a question the earlier sweep could
+only pose anecdotally: §7.7 of the first edition of this report was built around
+"the one case in the sweep where Mercury is captured," which invited the reading
+that capture is a characteristic outcome. It is not. A body stripped from the Sun
+overwhelmingly just leaves. Ending up bound to the perturber requires the
+encounter to remove almost exactly the right amount of energy, and the sweep shows
+how narrow that window is.
 
 ---
 
@@ -689,28 +716,39 @@ paid for the 5.7× compression, and belongs beside the saving.
 
 ### 7.6 Sweep results
 
-654 usable runs of 672 (14 with Mars unbound, 4 outside the band).
+*Regenerated against the current sweep (`20260811_184731`).*
 
-**Atmospheric collapse is flagged, not reported.** 86 runs (13%) freeze the
-atmosphere out at some point in the year, 8 (1%) for the whole year. They are
-systematically the cold, distant cases — median `a` 2.39 AU against 1.49 for
+3826 usable runs of 4032 (the remainder have Mars unbound or outside the band).
+
+**Atmospheric collapse is flagged, not reported.** 598 runs (15.6%) freeze the
+atmosphere out at some point in the year, 8 (0.2%) for the whole year. They are
+systematically the cold, distant cases — median `a` **2.43 AU against 1.49** for
 valid runs, and less than half the annual-mean insolation.
 
-Restricted to the 568 runs the model can speak about:
+Restricted to the 3228 runs the model can speak about:
 
 | | median | 5th | 95th |
 |---|---|---|---|
-| Global mean T | 206.2 K | 175.1 | 234.9 |
-| Equatorial seasonal range | 42.6 K | 19.1 | 139.3 |
-| Pressure swing | 0.30 | 0.17 | 0.89 |
+| Global mean T | 204.9 K | 175.8 | 234.4 |
+| Equatorial seasonal range | 44.6 K | 13.3 | 154.6 |
+| Pressure swing | 0.28 | 0.12 | 0.83 |
+
+Every one of these is within a few percent of the retired sweep's values
+(206.2 K, 42.6 K, 0.30) despite six times the runs and a different encounter
+speed — Mars's climate response is set by where it lands, and the distribution of
+where it lands is similar.
 
 **Eccentricity drives Martian seasons, not obliquity** — and this inverts the
 Earth result:
 
-| | correlation with seasonal range |
-|---|---|
-| Eccentricity | **+0.771** |
-| Obliquity | +0.071 |
+| | current | retired |
+|---|---|---|
+| Eccentricity | **+0.957** | +0.771 |
+| Obliquity | +0.028 | +0.071 |
+
+The current sweep makes the point far more sharply: with six times the sampling
+the eccentricity correlation tightens to +0.957 while obliquity falls to
+essentially zero.
 
 On Earth obliquity dominates (§4). The reason is thermal inertia: with
 `τ ≈ 6.6 days` Mars tracks the instantaneous `1/r²` forcing almost perfectly, so
@@ -719,36 +757,62 @@ that away and leaves only the tilt signal. **The same parameter can dominate on
 one planet and be negligible on another, for reasons that have nothing to do
 with the parameter itself.**
 
-**120 runs (21%) see the equator exceed 273 K**, and among those it stays above
-freezing for a median 22% of the year.
+**890 runs (28%) see the equator exceed 273 K**, and among those it stays above
+freezing for a median 19% of the year.
+
+**Above freezing is not the same as liquid water.** That distinction was added
+after this section was first written and is the single most consequential
+correction in the document — see §8. Requiring the surface to be both above the
+triple point *and* below the local boiling point:
+
+| test | runs with any liquid water | share |
+|---|---|---|
+| above triple point only (the weak test) | 880 | 23.0% |
+| **liquid water possible, at the equator** | **823** | **21.5%** |
+| **liquid water possible, at the best latitude** | **1250** | **32.7%** |
+
+Even the best case is a *fraction of a year at one latitude*: the maximum across
+the whole sweep is **7.8% of the year**. No run in 3826 produces Mars with
+year-round liquid water anywhere on its surface.
 
 ### 7.7 A worked scenario
 
-*Examined in full in [`SCENARIO_mercury_capture.md`](SCENARIO_mercury_capture.md),
-including the habitability analysis and its sensitivities.*
+*The adopted scenario is examined in full in
+[`SCENARIO_mars_window.md`](SCENARIO_mars_window.md), narrated in
+[`SCENARIO_timeline.md`](SCENARIO_timeline.md), and its aftermath worked out in
+[`SCENARIO_post_flyby_system.md`](SCENARIO_post_flyby_system.md). The retired
+sweep's worked example — a Mercury-capture run — had its own write-up, now
+deleted: capture is no longer a distinguishing feature, since 32 runs of the
+current sweep capture a body (26 Mercury, 6 Venus) including the adopted run
+itself. See §6.9.*
 
-Run `…rp0p5__vinf25__inc30__…Om0__om0` — chosen because it is the one case in
-the sweep where **Mercury is captured by the black hole** (a = 0.128 AU, e = 0.251,
-53-day period, departing at 820 AU). In the same run:
+The current sweep's adopted run is
+`…rp0p75__vinf25__inc30__toff59132__Om0__om30`, selected for the Mars
+habitability window rather than for a capture:
 
-| | Earth | Mars |
+| | value | percentile in sweep |
 |---|---|---|
-| Post-flyby `a` | 1.451 AU (outward) | **1.295 AU (inward)** |
-| Outcome | **snowball, 184 K** | **warms +12.5 K** |
-| Time to freeze | ice to the equator by **year 2** | — |
-| Equatorial seasonal range | — | **119 K** (23 K today) |
-| Equatorial summer peak | — | **310 K** — above the melting point of water |
-| Pressure swing | — | **61%** |
+| Post-flyby `a` | 1.336 AU | — |
+| Eccentricity | 0.217 | — |
+| Obliquity | 23.8° | — |
+| Global mean T | 217.5 K | 77th |
+| Equatorial seasonal range | 53.3 K | 57th |
+| Peak temperature anywhere | 278.7 K | 69th |
+| **Liquid water, best latitude (−21.5°)** | **7.2% of the year** | **99th** |
 
-**They swap places.** Earth is flung out and freezes; Mars is pulled in and
-becomes a violently seasonal world crossing 273 K every perihelion.
+**The selection is honest about what it selected for.** This run is unremarkable
+on every axis except the one it was chosen for — 57th percentile for seasonal
+range, 69th for peak temperature — and sits at the 99th percentile for the
+liquid-water fraction. That is the correct shape for a deliberately chosen
+scenario: it is an outlier in the target variable and typical in everything else,
+which is a much weaker claim than "the flyby makes Mars habitable."
 
-The scenario is *not* representative, and the sweep is what establishes that:
-Mars warming is a **coin flip** across the sweep (49% warmer, 51% cooler, median
-−1.7 K), and this run sits at the **86th percentile** for warming, the **90th**
-for seasonal range and the **95th** for peak temperature. A single-run study
-would have supported "the flyby warms Mars while freezing Earth" — a false
-generalisation of exactly the kind §9 warns about.
+It also remains true that the sweep, not the run, is what licenses any general
+statement. A single-run study would support "the flyby warms Mars while freezing
+Earth"; across 3826 runs the median Mars outcome is 204.9 K and no run anywhere
+achieves year-round liquid water. This is the false generalisation §9 warns
+about, and the reason the worked scenario appears *after* the sweep results
+rather than instead of them.
 
 ---
 
@@ -768,19 +832,38 @@ Recorded deliberately — several initial claims did not survive testing.
 | Apparent `λ_p` → temperature correlation of +0.59 | **Spurious** — collinear with `a`. Controlling for insolation: −0.22. |
 | "A second planet will need *more* approximation than Earth" | **Backwards.** Mars's radiation is *simpler*: emissivity 1.00 makes `σT⁴` exact rather than fitted, removing the Earth model's narrowest validity limit entirely. |
 | A Mars test asserting the year's minimum temperature against a single end-of-year frost point | **The test was wrong, not the model.** The frost point *moves* as pressure falls; the minimum matched the frost point at minimum pressure exactly. Rewritten to compare step by step, plus an assertion that the frost point moves at all. |
+| "float32 costs ~10⁻⁶ AU and ~10⁻⁶ degrees" (§11) | **Optimistic by 1–4 orders of magnitude.** Measured across 4032 runs whose pre-flyby elements are physically identical — so any spread is pure numerical error — the actual scatter is 1.8×10⁻⁵ AU in `a` and 3.1×10⁻² degrees in `λ_p`. The conclusion survives (still ~140× under the accepted precession uncertainty) but the quoted figure did not. It also downgraded the §5.3 zero-variance check from an equality to a tolerance. |
+| `liquid_water_possible` tested only that the surface was above the water triple point | **Incomplete — it ignored boiling.** On a thin-atmosphere Mars the surface can sit above 273 K while the pressure is far below water's saturation pressure, so the water sublimates rather than pooling. The test now requires `T > 273.16 K` **and** `p > p_sat(T)`. This changed the answer by a large factor and **changed which runs won**: the best run under the old test showed 33% of the year with "liquid water", against 1% under the correct one. The weaker test is retained as `above_water_triple_point` for comparison, and the two still disagree — 23.0% of runs against 21.5% at the equator (§7.6). A unit test asserting the old behaviour had to be renamed rather than deleted, because it was asserting the bug. |
 
 ### 7.2 Genuine negative results
 
-* **Temperature overshoot is exactly zero across all 644 runs**, in both single-
-  and two-surface modes. The approach to equilibrium is monotonic. This was one
-  of the stated motivations for running transients and it simply does not occur.
+* **Temperature overshoot is exactly zero**, in both single- and two-surface
+  modes. The approach to equilibrium is monotonic. This was one of the stated
+  motivations for running transients and it simply does not occur.
+  *(Measured across the retired sweep's 644 usable runs; not re-tested since —
+  see §6.5. A qualitative result, but the evidence for it is not current.)*
 * **Initial-condition bistability does not occur** in the tested range, despite
-  the model having a genuine bifurcation.
+  the model having a genuine bifurcation. *(12 runs straddling the bifurcation,
+  retired sweep.)*
 * **A blended heat capacity is not a useful approximation** (9% effect) — worth
-  recording so the cheap approach is not re-attempted.
-* **Obliquity barely affects Martian seasonal amplitude** (r = +0.07, against
-  +0.771 for eccentricity) — the reverse of Earth, and a reminder that a
-  parameter's importance is a property of the system, not of the parameter.
+  recording so the cheap approach is not re-attempted. *(Retired sweep.)*
+* **Obliquity barely affects Martian seasonal amplitude** (r = +0.03 in the
+  current sweep, against +0.96 for eccentricity) — the reverse of Earth, and a
+  reminder that a parameter's importance is a property of the system, not of the
+  parameter.
+* **No run in 3826 gives Mars year-round liquid water.** The best case is 7.8% of
+  the year at one latitude. The flyby can open a habitability *window*; it cannot
+  produce a habitable Mars. This is a negative result about the scenario itself,
+  not about the model.
+* **Capture is not a characteristic outcome.** 32 of 36,288 body-outcomes end up
+  bound to the black hole — 1.5% of bodies that leave the Sun, 0.09% overall
+  (§6.9). The first edition's worked example was a capture case, which
+  overstated how typical that is.
+* **The median climate outcome is not a robust quantity.** It moved from −9.2 K
+  to +5.1 K between two sweeps of the same scenario family (§6.1) purely because
+  median post-flyby `a` shifted by 0.05 AU. The *distribution* of outcomes is
+  stable; its centre is not. Do not quote the median as a property of "a black
+  hole flyby."
 
 ---
 
@@ -887,12 +970,21 @@ Recorded deliberately — several initial claims did not survive testing.
 
 ## 11. Data volume and archival
 
-The engine writes one `*__orbits__*.xlsx` per run at ~220 MB, making the 672-run
+> **Superseded by an engine change.** Everything below describes the retired
+> sweep, when the engine wrote xlsx and conversion was a *post-hoc* rescue. The
+> engine now writes Parquet directly (`orbits_format: parquet`, the default) and
+> supports two-rate logging — a dense window around perihelion, coarse elsewhere —
+> so the current 4032-run sweep never creates the 150 GB in the first place. The
+> xlsx path and `convert_orbits_to_parquet.py` remain only for reading older
+> sweeps. The analysis of *why* the format was so wasteful is retained because it
+> is what motivated the engine change.
+
+The engine wrote one `*__orbits__*.xlsx` per run at ~220 MB, making the 672-run
 sweep **150.7 GB**. Almost all of that is format overhead, not information:
 every number is stored as XML text, five `*_str` columns duplicate numeric ones
 as text, and four more columns are derivable from the state vector.
 
-[`convert_orbits_to_parquet.py`](convert_orbits_to_parquet.py) reduces this to
+[`convert_orbits_to_parquet.py`](convert_orbits_to_parquet.py) reduced this to
 **26.4 GB — a 5.71× reduction** — with all 672 runs verified and zero failures.
 
 **What is kept:** `t_days, x, y, z, vx, vy, vz, disp_helio_au`. Dropped as
@@ -909,6 +1001,16 @@ parsed with one regex: ~0.6 s per sheet, **21× faster**.
 elements from float32 state vectors differs from float64 by ~10⁻⁶ AU and
 ~10⁻⁶ degrees — negligible beside the ~4.3° λ_p precession uncertainty already
 accepted in §5.4.
+
+> **That measurement was optimistic.** Now that the engine writes float32 Parquet
+> for the whole sweep, the spread can be read straight off the pre-flyby elements,
+> which are physically identical across all 4032 runs and so isolate the numerical
+> error exactly. Actual scatter: **1.8×10⁻⁵ AU** in `a` (18× the stated figure)
+> and **3.1×10⁻² degrees** in `λ_p` (four orders of magnitude above it). The
+> original measurement evidently sampled a favourable case. The *conclusion* is
+> unaffected — 0.03° is still ~140× smaller than the accepted 4.3° precession
+> uncertainty, and float32 remains the right choice — but the error bar is not
+> what this section claimed. See §5.3.
 
 **Three layers of verification**, all required before a run is reported `ok`:
 
@@ -961,7 +1063,8 @@ the encounter or the engine writes Parquet directly.
 
 | File | Role |
 |---|---|
-| `extract_earth_elements.py` | Recovers `a, e, ε, λ_p` per run from the orbits workbooks (30× faster than openpyxl) |
+| `extract_earth_elements.py` | Recovers `a, e, ε, λ_p` per run from the orbit logs (reads Parquet directly; the 30×-faster xlsx path in §5.5 is retained for older sweeps) |
+| `find_bh_captures.py` | Separates bodies captured by the BH from those merely ejected (§6.9) |
 | `climate_from_simulations.py` | Runs the EBM on every simulation; equilibrium or transient; parallel |
 | `rank_run_impact.py` | Ranks runs by orbital disruption (energy/eccentricity/perihelion metric) |
 | `convert_orbits_to_parquet.py` | Converts the orbit workbooks to Parquet (5.7x smaller), with structural, round-trip and scientific verification |
@@ -972,6 +1075,12 @@ the encounter or the engine writes Parquet directly.
 
 ### Reproduction
 
+The current sweep is `<STAMP>` = `20260811_184731`. Steps 2–5b below were run
+against it and produced the `simulations/20260811_184731_*.csv` files this report
+quotes — **with default options** (linear OLR, single surface, equilibrium). The
+`--olr-model sellers --two-surface` and `--transient` variants shown have **not**
+been run against the current sweep — running them is exactly what §6.5 asks for.
+
 ```bash
 # 0. Dependencies
 python -m pip install numpy scipy pandas matplotlib pyyaml pyarrow pytest
@@ -981,6 +1090,9 @@ python -m pytest orbital_climate/tests/ -v            # 61 tests
 
 # 2. Rank runs by orbital disruption
 python rank_run_impact.py simulations/<STAMP> --plot impact.png
+
+# 2b. Capture census — which bodies leave *with* the black hole (§6.9)
+python find_bh_captures.py simulations/<STAMP>
 
 # 3. Recover Earth's post-flyby orbital elements (~10 min, 5 workers)
 python extract_earth_elements.py simulations/<STAMP> --workers 5
@@ -1162,8 +1274,9 @@ Every quantitative claim in this report, and where it was checked:
 | Present-day calibration | global mean | 288.15 K |
 | λ_p recovery correct | applied at `t = 0` | 282.29° vs ~283° expected |
 | λ_p semantics correct | perihelion date in simulation | Jan 1 ✓ |
-| Extraction deterministic | pre-flyby values across 672 runs | zero variance |
-| Bound/unbound classification | vs independent deltas CSVs | 662/672 both ✓ |
+| Extraction deterministic | pre-flyby values across 672 runs (xlsx/float64) | zero variance |
+| …the same on the current sweep | 4032 runs (Parquet/float32) | agrees to 1.8×10⁻⁵ AU — a tolerance, not an equality (§5.3) |
+| Bound/unbound classification | vs independent deltas CSVs | 662/672 and 3966/4032 both ✓ |
 | Land fraction profile | area-weighted global mean | 0.290 (Earth 0.29) |
 | Land/ocean calibration | 65 °N seasonal ranges | 40.1 K / 9.1 K vs ~40 / ~8–9 |
 | Two surfaces preserve energetics | global mean shift | 288.14 → 288.42 K |
@@ -1180,5 +1293,7 @@ Every quantitative claim in this report, and where it was checked:
 | Sellers physical when frozen | Sellers/blackbody at 180–220 K | 0.89–0.97 (linear collapses to 0.14) |
 | Sellers reproduces 288 K | `sellers_m` scan | 288.04 K at m = 0.51 |
 | Runaway flag fires correctly | Earth moved inward | triggers between a = 0.90 and 0.85 AU (analytic 0.876) |
-| Parquet preserves the science | elements re-derived from converted files | ~10⁻⁶ AU, ~10⁻³ deg |
+| Parquet preserves the science | elements re-derived from converted files | ~10⁻⁶ AU, ~10⁻³ deg — **optimistic, see §8/§11**; full-sweep measurement gives 1.8×10⁻⁵ AU, 3.1×10⁻² deg |
 | Parquet conversion integrity | 672 runs, 3 verification layers | 672 ok, 0 failed |
+| **Capture vs ejection census** | 36,288 body-outcomes, two-body energy test | 32 captured, 2140 free (§6.9) |
+| **Mars liquid water** | triple point *and* boiling, 3826 runs | max 7.8% of year; 0 runs year-round (§7.6) |

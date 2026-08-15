@@ -16,8 +16,9 @@ residual and the encounter are the part with people in it.
 *(Rebuilt for the current sweep — epoch 1885-09-01, `v_inf` = 25 km/s. An earlier
 version of this document described a `v_inf` = 10 km/s configuration in which the
 hole was less than half as far out at every epoch; all of Act I's distances and
-signal strengths are correspondingly larger there. The retired 2027 scenario is
-preserved in [`SCENARIO_mercury_capture.md`](SCENARIO_mercury_capture.md).)*
+signal strengths are correspondingly larger there. An earlier retired scenario
+placed perihelion in 2027; its write-up has been deleted as superseded and
+survives only in git history.)*
 
 ---
 
@@ -256,6 +257,12 @@ star.
 | **Saturn** | 9.573 AU, e 0.055 | **~1650 AU, e 0.994** |
 | Uranus | 19.299 AU, e 0.051 | 11.485 AU, e 0.679 |
 | Neptune | 30.090 AU, e 0.008 | 29.927 AU, e 0.516 |
+
+*What these elements imply — Saturn's effective expulsion (aphelion 3,244 AU on a
+65,600-year period), Venus inheriting Earth's orbit, the seven orbit-crossing
+pairs that make the arrangement unstable beyond the integration, the survival of
+the Earth–Moon system, and the end of annular eclipses — is worked through in
+[`SCENARIO_post_flyby_system.md`](SCENARIO_post_flyby_system.md).*
 
 ---
 
