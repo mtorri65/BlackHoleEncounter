@@ -494,14 +494,26 @@ retrograde; the old sweep's maximum was 74°. The extreme `a` tail is also far
 shorter, 82.8 AU against 1097.6.
 
 **None of this is an encounter-speed effect** — both sweeps run at
-`v_inf` = 25 km/s. The 6-fold refinement of the `omega` grid is the likely
-driver: `omega` sets where periapsis falls relative to the planets, the old
-sweep sampled it at only four values 90° apart, and §6.3 shows the sweep's
-outcomes are dominated by where Earth ends up rather than by how hard it was
-hit. Four coarse samples of that angle can easily land a median in a different
-place than twenty-four. The epoch shift contributes too, since the planets sit
-elsewhere at encounter. **This has not been separated into the two causes**, and
-doing so would need a sweep at the old `omega` resolution on the new epoch.
+`v_inf` = 25 km/s. The two candidate causes, the epoch shift and the `omega`
+refinement, can be separated without running anything new: restrict the current
+sweep to `omega ∈ {0°, 90°, 180°, 270°}` and it reproduces the retired sweep's
+grid exactly, on the new epoch.
+
+| | median `a` | median T |
+|---|---:|---:|
+| 1873 epoch, coarse `omega` (retired sweep) | 1.0384 AU | 278.97 K |
+| **1885 epoch, coarse `omega`** (current, restricted) | **0.9924 AU** | **291.61 K** |
+| 1885 epoch, full `omega` (current) | 0.9854 AU | 293.26 K |
+| | | |
+| **epoch effect** | **−0.046 AU** | **+12.64 K** |
+| `omega`-grid effect | −0.007 AU | +1.65 K |
+
+**The epoch shift accounts for ~87% of it.** Refining `omega` is a minor
+correction by comparison. Moving the epoch 12 years moves perihelion from 2027 to
+2047 and so changes where each planet sits when the hole arrives — which is a
+real physical difference in the encounter geometry, not a sampling artefact.
+(An earlier edition of this section guessed the `omega` grid was responsible.
+It is not; the table above is measured.)
 
 **λ_p spans essentially the full circle** — recovering it was necessary, not
 optional. Freezing it at 283° would have been a genuine error.
@@ -531,11 +543,17 @@ directly from §5.8, where median `a` moved from 1.038 to 0.985 AU. Warming
 follows from Earth sitting closer to the Sun; the climate model is doing nothing
 surprising.
 
-**What moved the median is a sampling change, not a physical one.** Both sweeps
-use `v_inf` = 25 km/s, the same BH mass, and the same `rp`, inclination and
-`Omega` grids. What differs is the `omega` resolution (4 values → 24) and the
-12-year epoch shift. So this is a caution about reading sweep medians as physics:
-a median can move 14 K because the grid under it was re-sampled.
+**What moved it is the epoch, not the encounter.** Both sweeps use
+`v_inf` = 25 km/s, the same BH mass, and the same `rp`, inclination and `Omega`
+grids. §5.8 separates the two remaining differences: the 12-year epoch shift
+contributes **+12.64 K** and the `omega` refinement only **+1.65 K**. Moving
+perihelion from 2027 to 2047 changes where each planet stands when the hole
+arrives, and that is enough to reverse the sign of the median outcome.
+
+**The caution worth carrying forward:** a sweep median is not a property of "a
+black hole flyby". It is a property of a flyby *at a particular epoch*, and it
+moved 14 K on a 12-year change in arrival date. Quote the distribution — which
+is stable — rather than its centre.
 
 The proportion of Earth-like outcomes is essentially unchanged (20.7% vs 21%),
 which is reassuring: the *spread* of outcomes is a property of the sweep geometry,
