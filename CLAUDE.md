@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-~42 standalone Python scripts in the repo root, simulating a close flyby of a passing
+~41 standalone Python scripts in the repo root, simulating a close flyby of a passing
 black hole through the solar system (REBOUND N-body integration), plus post-processing,
 visualization, a climate thread that asks what the perturbed orbits do to Earth and Mars,
 and a separate analysis thread that checks whether the BH's astrometric signature would be
@@ -18,7 +18,7 @@ background is in `orbital-climate-model-context.md`.
 
 `Script_Summaries.pdf` in the repo root has a full purpose/inputs/outputs/techniques
 write-up for every script — consult it before re-deriving what a script does from scratch.
-**It is out of date**: it dates from 2026-07-23, and 16 of the 42 scripts have been added
+**It is out of date**: it dates from 2026-07-23, and 15 of the 41 scripts have been added
 or substantially changed since — the whole scenario-selection and climate thread, all the
 sky-track/export tooling, and edits to the core engine itself. Treat a missing entry as
 "not yet written up", not "no such script", and check a script's own docstring before
@@ -156,10 +156,10 @@ produced the expected files in the expected place.
    constant apparent speed (`--pace arc`, the default) or linearly in time; `--from-year` /
    `--to-year` restrict the window. `sky_backdrop.py` draws the star field and constellation
    figures behind it, and `fetch_constellation_data.py` builds the data those need (see
-   Environment above — this is a required one-time step). `export_bh_track.py` and
-   `export_bh_track_cdc.py` emit the track for external planetarium software instead, as
-   generic CSV and Cartes du Ciel user-object format. `plot_sky_tracks.py` is older and
-   unrelated in output: static RA/Dec tracks of the BH *and the planets* during the flyby.
+   Environment above — this is a required one-time step). `export_bh_track.py` emits the
+   track as a CSV instead, sampled at constant angular spacing, for plotting elsewhere.
+   `plot_sky_tracks.py` is older and unrelated in output: static RA/Dec tracks of the BH
+   *and the planets* during the flyby.
 
 ### Sky-chart conventions
 
