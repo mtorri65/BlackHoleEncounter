@@ -260,7 +260,7 @@ representative** of the 2047 one at the same rp, which is a useful property.
 A 0.1 M☉ black hole is sub-Chandrasekhar and cannot form by stellar collapse, so
 it would have to be primordial — i.e. a dark-matter constituent, with halo
 kinematics of 150–250 km/s relative to the Sun. The constraint above demands
-10 km/s. **This is a real tension and it should be stated in any write-up.**
+**25 km/s**. **This is a real tension and it should be stated in any write-up.**
 
 **No deceleration mechanism resolves it.** Time to change v by ~200 km/s:
 
@@ -278,22 +278,33 @@ help either, because a cluster with a few km/s escape velocity cannot capture
 something arriving at 250 km/s: those mechanisms *preserve* slowness, they do
 not create it.
 
-**The framing is wrong, though.** 10 km/s is relative to the *Sun*, not the
+**The framing is wrong, though.** 25 km/s is relative to the *Sun*, not the
 Galaxy. Nothing needs to decelerate; the BH's galactic orbit merely needs to
 resemble the Sun's. That happens by **selection**, not by dynamics:
 
-- **1 in 43,000** halo objects already has |v_rel| < 10 km/s (Standard Halo
-  Model, σ = 156 km/s, Sun at 232 km/s).
-- Slow encounters are *not* strongly disfavoured in rate. Low flux (×0.04) is
-  nearly cancelled by gravitational focusing (×36 at rp = 0.5 AU): the rate
-  ratio of 10 vs 270 km/s encounters is 1.29 at rp = 0.5 AU and 0.47 at 1.5 AU.
+- **1 in 2,800** halo objects already has |v_rel| < 25 km/s (Standard Halo
+  Model, σ = 156 km/s, Sun at 232 km/s) — P = 3.62×10⁻⁴.
+- Slow encounters are *not* strongly disfavoured in rate. For a single object,
+  moving slowly means a lower flux past the Sun but a larger effective target
+  through gravitational focusing (×7 at rp = 0.5 AU for 25 km/s), and the two
+  nearly cancel: the per-object rate ratio of 25 vs 270 km/s encounters is
+  **0.59 at rp = 0.5 AU and 0.26 at 1.5 AU**. Slowness costs you *rarity*, not
+  encounter rate.
 
 **Absolute rarity, stated plainly.** Even granting that 0.1 M☉ PBHs are 100% of
 dark matter, encounters within 1.5 AU of the Sun run at **4.7×10⁻⁵ per 10 Gyr**
-at any speed, and **5.1×10⁻¹⁰** once `v_inf` < 10 km/s is required. Microlensing
+at any speed, and **4.4×10⁻⁹** once `v_inf` < 25 km/s is required. Microlensing
 surveys already cap 0.1 M☉ PBHs at ~10–20% of dark matter, costing another
 factor of ~10. The scenario was astronomically improbable before this constraint;
-the velocity requirement makes it ~10⁵× more so.
+the velocity requirement makes it ~10⁴× more so.
+
+*(All figures above regenerated at `v_inf` = 25 km/s via
+`python astrometric_detectability.py rates --vcut 25`. An earlier edition quoted
+them for the retired 10 km/s configuration: 1 in 43,000, ×36 focusing, ratios
+1.29/0.47, and 5.1×10⁻¹⁰ — i.e. the current scenario is about **8.6× less
+improbable** than that one, since the slow-object fraction rises steeply as the
+cut is relaxed. The deceleration table above is independent of the cut and is
+unchanged.)*
 
 ### Three ways to respond
 
@@ -301,17 +312,28 @@ the velocity requirement makes it ~10⁵× more so.
 above shows slow encounters are not additionally penalised once one occurs.
 
 **(b) Drop the halo assumption** — the cleanest fix. A kinematically cold disk
-population gives 10 km/s naturally: Gliese 710 will pass the Sun at ~14 km/s,
+population gives ~25 km/s comfortably: Gliese 710 will pass the Sun at ~14 km/s,
 and the Sun's own peculiar velocity relative to the local standard of rest is
-only ~18 km/s. The cost is giving up the identification with standard dark
-matter; one would need a "dark disk", or simply decline to say what the object
-is.
+only ~18 km/s, so 25 km/s is unremarkable for a disk object. The cost is giving
+up the identification with standard dark matter; one would need a "dark disk", or
+simply decline to say what the object is.
 
-**(c) Relax the 1885 constraint.** This is the lever that created the problem,
-and it is a narrative choice rather than physics. "Invisible in 1885" instead of
-"barely recognizable" allows `v_inf` = 25 km/s (0.03″ in Uranus, comfortably
-undetectable), restores 926 AU at epoch, and removes the kinematic tension
-entirely.
+**(c) Relax the 1885 constraint.** Insisting the residual be *barely
+recognizable* in 1885 is a narrative choice rather than physics, and dropping it
+would allow a still-higher `v_inf`, pushing the object further out at every epoch.
+
+**How the tension was actually reduced.** Not by (b) or (c), but by fixing the
+metric. §4 replaced an arbitrary 30-year campaign window — which happened to sit
+near one of the detrending nulls — with the historically defensible 100-year
+baseline an 1885 analyst really had, since Uranus has prediscovery positions back
+to 1690. That moves the derived speed from 10 to **25 km/s while still meeting
+the 1885 constraint**: the residual is 0.76″, just under the ~1″ a Le
+Verrier-class analysis might have claimed. So the scenario keeps "barely
+detectable in 1885" *and* gains a factor of 8.6 in kinematic plausibility.
+
+The tension is reduced, not removed — 25 km/s against a halo's 150–250 km/s is
+still a 1-in-2,800 selection. Options (a), (b) and (c) all remain available if
+more relief is wanted.
 
 **What will not work: a bound companion.** Free-fall from 400 AU takes ~707
 years, but the 1885→2047 window allows only 162. At 400 AU the local escape

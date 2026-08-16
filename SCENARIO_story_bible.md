@@ -117,17 +117,29 @@ scenario and it is entirely psychological.*
 **The lensing signature grows slowly, then quickly.** A background star passing
 directly behind the black hole is smeared into an Einstein ring:
 
-| year | distance | Einstein ring |
-|---|---|---|
-| 1885 | 863 AU | 0.44″ |
-| 1950 | 522 AU | 0.57″ |
-| 2000 | 257 AU | 0.81″ |
-| 2030 | 97 AU | 1.31″ |
-| 2045 | 16 AU | 3.25″ |
-| **Sept 2047** | **1.29 AU** | **11.4″** |
+| year | distance | Einstein ring | |
+|---|---|---|---|
+| 1885 | 863 AU | 0.44″ | |
+| 1950 | 522 AU | 0.57″ | |
+| 2000 | 257 AU | 0.81″ | |
+| **2018** | **162 AU** | **1.02″** | **Gaia DR2 — it becomes a point on the sky** |
+| 2030 | 97 AU | 1.31″ | |
+| 2045 | 16 AU | 3.25″ | |
+| **Sept 2047** | **1.29 AU** | **11.4″** | |
 
-At closest approach the ring is **11.4 arcseconds** — comfortably resolvable.
-Stars within that radius of its position are visibly doubled or drawn into arcs.
+**2018 is the beat worth using.** Gaia — a real mission, flying now — is what
+first converts the object from a direction into a *position*. The trick is that
+you do not need a star to pass behind it: weak deflection falls off slowly, so a
+background star a full degree away is still displaced by **288 µas against
+Gaia's 25 µas precision**. The result is a coherent astrometric distortion
+field tens of degrees across, dragged over the sky by the object's parallax.
+
+Everything before this is inference from how the planets move. After it, there
+is a spot in the sky you can point at.
+
+**By 2047 it is unmistakable.** At closest approach the ring is **11.4
+arcseconds** — comfortably resolvable. Stars within that radius of its position
+are visibly doubled or drawn into arcs.
 For a few weeks in 2047 there is a patch of sky where the stars are *wrong*: a
 moving, invisible centre around which background stars split, brighten, wheel and
 rejoin. **This is the one directly observable phenomenon, and it is strange
@@ -154,7 +166,58 @@ the seasons start arriving wrong.
 
 ---
 
-## 5. The world afterwards
+## 5. When it gets a name
+
+The scenario documents call it a black hole from the first line. **Nobody in the
+story gets to.** The gap between knowing what the object does and having a word
+for what it is runs to about thirty years, and it is the strongest structure
+available in Act I.
+
+**Stage 1 — the 1930s: the facts.** Mass and distance are disentangled, the
+approach speed measured at 25 km/s against a local escape speed of 1.7 km/s.
+The object is unbound, it is arriving, and the arrival is dated to the middle of
+the twenty-first century, ±18 years. Everything quantitative is settled.
+
+**Stage 2 — immediately after: it is dark.** This step is available the moment
+mass and direction are both known, and it is decisive. A 0.1 M☉ object on the
+main sequence is an M6 dwarf. At 628 AU it would shine at **V = −0.6, brighter
+than Sirius** — one of the most conspicuous objects in the sky.
+
+| year | distance | how bright an ordinary 0.1 M☉ star would look |
+|---|---|---|
+| 1885 | 863 AU | V = +0.1 |
+| 1930 | 628 AU | **V = −0.6** |
+| 1960 | 470 AU | V = −1.2 |
+| 2018 | 162 AU | V = −3.5 |
+
+They have a direction good to arcminutes. They look, and find **nothing** — not
+faint, absent. The object is therefore dark and compact, and that conclusion is
+inescapable in the 1930s.
+
+**Stage 3 — the 1960s: there is finally a category.** And this is the payload.
+In the 1930s no physics permits what they are holding:
+
+- **"Black hole" is not coined until 1967** (Wheeler). Oppenheimer–Snyder
+  gravitational collapse is 1939 — *after* the object is characterised.
+- **0.1 M☉ is sub-Chandrasekhar.** It cannot be a stellar remnant by any route:
+  the collapse channel needs several solar masses. So even once collapse is
+  understood, this object does not fit.
+- It requires **primordial black holes** — proposed by Zel'dovich & Novikov
+  (1966) and developed by Hawking (1971).
+
+So the object is fully characterised roughly three decades before there is a
+theory that allows it to exist, and when the name finally arrives it carries an
+unsettling implication: this thing is a relic of the first second of the
+universe, older than every atom in the solar system, and it has been falling
+toward the Sun the entire time.
+
+*(Stages 1 and 3 are historically real dates for real physics. Stage 2's
+brightness figures are computed for this scenario. What a 1930s astronomer would
+actually have concluded, argued about, or refused to believe is yours — see §8.)*
+
+---
+
+## 6. The world afterwards
 
 ### Earth
 
@@ -200,7 +263,7 @@ Mars's habitability window is real but not shown to be durable.
 
 ---
 
-## 6. Quick reference
+## 7. Quick reference
 
 | | |
 |---|---|
@@ -219,7 +282,7 @@ Mars's habitability window is real but not shown to be durable.
 
 ---
 
-## 7. Where you have license
+## 8. Where you have license
 
 The simulation determines orbits and temperatures. It says nothing whatever
 about:
@@ -242,7 +305,7 @@ about:
 
 ---
 
-## 8. Things that would be wrong
+## 9. Things that would be wrong
 
 Common instincts that this scenario does not support:
 

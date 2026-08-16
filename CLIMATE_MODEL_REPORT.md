@@ -25,9 +25,16 @@ accordingly:
 | tag | `20260724_230314` | **`20260811_184731`** |
 | epoch | 1873-09-01 | **1885-09-01** |
 | BH perihelion | ~2027 | **2047** |
-| `v_inf` | 10 km/s | **25 km/s** |
+| `v_inf` | 25 km/s | 25 km/s — **unchanged** |
+| `omega` grid | 90° steps (4 values) | **15° steps (24 values)** |
 | runs | 672 | **4032** |
-| on disk? | **deleted** | yes |
+| on disk? | **deleted 2026-08-15** | yes |
+
+**The two sweeps differ in less than it looks.** `v_inf`, BH mass, and the `rp`,
+inclination and `Omega` grids are identical. Only two things changed: the epoch
+moved 12 years (carrying perihelion from 2027 to 2047, so the planets sit
+differently at encounter), and the `omega` grid was refined 6-fold. Any
+difference in results traces to those, **not** to encounter speed.
 
 - **Parts I–IV (§2–§5)** describe how the model was built and validated. Physics,
   not sweep output — unaffected by the change, except §5.4 and §5.7–§5.8, which
@@ -464,7 +471,8 @@ regime still return numbers, but fictitious ones. Excluded by default:
 | **Usable** | **3904 (97%)** |
 
 Earth survives bound in **98.4%** of runs, against 98.5% in the retired sweep —
-the higher `v_inf` did not measurably change Earth's odds of staying.
+refining the `omega` grid and moving the epoch did not measurably change Earth's
+odds of staying.
 
 ### 5.8 Distribution of recovered elements (3966 bound runs)
 
@@ -479,12 +487,21 @@ the higher `v_inf` did not measurably change Earth's odds of staying.
 | year length [d] | 113 | 357 | 275,000 |
 
 Two differences from the retired sweep are worth noting. The median `a` is now
-**0.985 AU against 1.038** — the faster flyby moves Earth *inward* on median
-rather than outward, which propagates directly into §6.1. And obliquity now
-reaches **131°**, past 90°, meaning some runs flip Earth's spin axis into
-retrograde; the old sweep's maximum was 74°. The extreme `a` tail is far shorter
-(82.8 AU vs 1097.6): a 25 km/s encounter is over faster and imparts less energy
-to the marginal cases.
+**0.985 AU against 1.038** — Earth ends up *inward* of where it started on
+median, rather than outward, which propagates directly into §6.1. And obliquity
+now reaches **131°**, past 90°, meaning some runs flip Earth's spin axis into
+retrograde; the old sweep's maximum was 74°. The extreme `a` tail is also far
+shorter, 82.8 AU against 1097.6.
+
+**None of this is an encounter-speed effect** — both sweeps run at
+`v_inf` = 25 km/s. The 6-fold refinement of the `omega` grid is the likely
+driver: `omega` sets where periapsis falls relative to the planets, the old
+sweep sampled it at only four values 90° apart, and §6.3 shows the sweep's
+outcomes are dominated by where Earth ends up rather than by how hard it was
+hit. Four coarse samples of that angle can easily land a median in a different
+place than twenty-four. The epoch shift contributes too, since the planets sit
+elsewhere at encounter. **This has not been separated into the two causes**, and
+doing so would need a sweep at the old `omega` resolution on the new epoch.
 
 **λ_p spans essentially the full circle** — recovering it was necessary, not
 optional. Freezing it at 283° would have been a genuine error.
@@ -510,9 +527,15 @@ so the comparison is like for like.*
 
 **The median sign flipped.** The retired sweep cooled Earth by 9.2 K on median;
 the current one *warms* it by 5.1 K. This is not a model change — it follows
-directly from §5.8, where median `a` moved from 1.038 to 0.985 AU. A faster
-encounter tends to drop Earth inward rather than fling it outward, and the
-climate result is the straightforward consequence.
+directly from §5.8, where median `a` moved from 1.038 to 0.985 AU. Warming
+follows from Earth sitting closer to the Sun; the climate model is doing nothing
+surprising.
+
+**What moved the median is a sampling change, not a physical one.** Both sweeps
+use `v_inf` = 25 km/s, the same BH mass, and the same `rp`, inclination and
+`Omega` grids. What differs is the `omega` resolution (4 values → 24) and the
+12-year epoch shift. So this is a caution about reading sweep medians as physics:
+a median can move 14 K because the grid under it was re-sampled.
 
 The proportion of Earth-like outcomes is essentially unchanged (20.7% vs 21%),
 which is reassuring: the *spread* of outcomes is a property of the sweep geometry,
