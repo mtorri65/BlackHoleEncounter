@@ -17,6 +17,16 @@ from the ground.
 `bh_captures.csv` elements and, where relative geometry matters, the orbit log
 itself.
 
+**Belt run:** §6 alone comes from a companion run,
+`simulations/20260815_171552/`, which repeats the adopted run's parameters with
+4,000 massless belt tracers added (the sweep was run with `n_belt: 0`). It is the
+same encounter, not a re-tuned one: BH–Sun perihelion 0.6615 AU on 2047-08-20 in
+both, and the post-flyby planetary elements agree to the precision shown in §1.
+The one exception is Saturn's semi-major axis — 1650.6 AU here against 1627 AU in
+the adopted run — which is expected rather than troubling, since at e = 0.9941 the
+semi-major axis is hypersensitive to a negligible difference in orbital energy;
+the eccentricity and perihelion agree.
+
 ---
 
 ## 1. The surviving system
@@ -40,7 +50,7 @@ inside Jupiter. And Saturn is no longer on a planetary orbit at all.
 
 ## 2. Saturn is expelled in all but name
 
-Saturn goes from a = 9.54 AU to **a = 1627 AU, e = 0.994**. Its perihelion barely
+Saturn goes from a = 9.573 AU to **a = 1627 AU, e = 0.994**. Its perihelion barely
 moves (9.71 AU, close to where it started), but its aphelion is thrown out to
 **3,244 AU** on a **65,600-year** period.
 
@@ -150,7 +160,83 @@ habitability window — carries an unstated ceiling: **the configuration that
 produces it is not shown to be durable, and this project cannot show how long it
 lasts.**
 
-## 6. Total solar eclipses become universal
+## 6. The asteroid belt is thrown onto planet-crossing orbits
+
+The planets are not the only population left crossing. A companion run with 4,000
+massless tracers (see the header note) shows the main belt converted from a
+cleanly separated reservoir into a source of planet-crossing bodies.
+
+**Before the flyby the separation is complete.** The tracers start with
+a = 2.0–3.5 AU, e ≤ 0.15, i ≤ 10°. The smallest perihelion anywhere in the
+population is **1.703 AU**, comfortably outside Mars's pre-flyby aphelion of
+1.666 AU. **Not one of the 4,000 crosses any planet's orbit.**
+
+Afterwards:
+
+| | before | after |
+|---|---:|---:|
+| median e | 0.074 | **0.306** |
+| median i | 5.1° | **8.0°** |
+| fraction with i > 10° | 0% | **37.0%** |
+| fraction with e > 0.5 | 0% | **15.8%** |
+| perihelion range | 1.70 – 3.48 AU | **0.71 – 5.55 AU** |
+| still within a = 2–3.5 AU | 100% | **46.9%** |
+
+**36 tracers (0.90%) are unbound outright.** Of the 3,964 that remain bound, 699
+are driven inside 2 AU and 1,390 outside 3.5 AU; the most extreme survivor is left
+at a = 2,602 AU. Fewer than half the belt is still where it started.
+
+The consequence is that the perturbed belt now reaches the planets:
+
+| population | radial range | tracers crossing it |
+|---|---|---:|
+| post-flyby Mars | 1.046 – 1.626 AU | **1,247** (31.5% of bound) |
+| post-flyby Earth | 1.135 – 1.840 AU | **1,617** (40.8% of bound) |
+
+Every Mars-crosser is also an Earth-crosser, since Earth's new range very nearly
+contains Mars's. A belt that intersected nothing now sends two fifths of itself
+through the orbit of a planet.
+
+> **The hazard summary answers a question about a planet that has moved.**
+> [`postprocess_belt_sizes_and_hazard.py`](postprocess_belt_sizes_and_hazard.py)
+> hardcodes `q_after < 1.0` as its definition of "Earth-crossing" — the right test
+> when Earth is at 1 AU, which after this flyby it is not. Earth's post-flyby
+> perihelion is **1.135 AU**. The shipped `__hazard_summary.txt` therefore counts
+> only the 92 tracers driven inside 1 AU, missing the far larger population that
+> crosses where Earth actually is. Both numbers are given below; the second is the
+> one that bears on the scenario.
+
+Scaling the sample to an assumed 1.2 million real ≥1 km asteroids, at the file's
+per-object impact probability of 1×10⁻⁸ yr⁻¹:
+
+| Earth-crossing defined as | ≥1 km crossers in sample | scaled real population | mean waiting time |
+|---|---:|---:|---:|
+| q < 1.0 AU (as shipped) | 2 of 131 | 18,321 | 5,458 yr |
+| Earth's actual post-flyby orbit | **53 of 131** | **485,496** | **206 yr** |
+
+The impact rate rises by a factor of 26. For Mars — the planet the scenario cares
+about, since [`SCENARIO_mars_window.md`](SCENARIO_mars_window.md) places its
+habitability window in exactly this period — the equivalent figure is 44 of 131
+≥1 km tracers crossing, a mean waiting time of **248 years**.
+
+**These waiting times are order-of-magnitude, and the reasons are worth stating.**
+The per-object probability of 1×10⁻⁸ yr⁻¹ is a present-day calibration: it embeds
+today's encounter velocities and Earth's gravitational cross-section at 1 AU.
+Carrying it unchanged onto a rearranged solar system is a scaling assumption, not
+a computed collision probability. The counting statistics are thin as well — 4,000
+tracers yield only 131 objects above 1 km, so the shipped estimate rests on **two**
+crossers and is uncertain by roughly a factor of two at 1σ; the post-flyby figure
+rests on 53 and is good to about 14%. And the tracers are massless and
+non-interacting, so there is no collisional evolution, no Yarkovsky drift, and no
+resonant resupply. As everywhere else in this document, the 316-year integration
+ceiling of §5 applies: this is the belt immediately after the encounter, not a
+relaxed one.
+
+What survives all those caveats is the qualitative result, which does not depend
+on the calibration: **a belt that crossed no planetary orbit before the flyby
+crosses Earth's and Mars's afterwards, with a large fraction of its mass.**
+
+## 7. Total solar eclipses become universal
 
 A pleasing consequence, and a clean qualitative change. Today's eclipses are
 marginal — the Moon and Sun are so nearly the same apparent size that whether an
@@ -199,7 +285,8 @@ so there are 23.2 lunations per orbit instead of 12.4, and eclipse seasons still
 occur twice per orbit.
 
 The finest eclipses in the solar system's history would go unwatched: Earth is a
-snowball at 205 K by this point (§Act III of the timeline). And Mars, which *does*
+snowball at 182 K by this point (§Act III of
+[`SCENARIO_timeline.md`](SCENARIO_timeline.md)). And Mars, which *does*
 get its habitability window under exactly these conditions, has no moon remotely
 large enough to eclipse anything.
 
@@ -210,11 +297,18 @@ large enough to eclipse anything.
 **Established, from the run's output:** the post-flyby elements and everything
 directly derivable from them — periods, apsides, insolation, radial overlaps,
 apparent angular sizes, umbral geometry. The Earth–Moon binding, tested on
-relative state vectors at every output step.
+relative state vectors at every output step. The belt's post-flyby element
+distribution and its crossing counts (§6), computed from the companion run's
+before/after element files.
 
-**Estimated:** totality duration (order-of-magnitude, as flagged above).
+**Estimated:** totality duration (order-of-magnitude, as flagged above). The
+impact waiting times of §6, which rest on a present-day per-object impact
+probability applied to a rearranged system, and on a ≥1 km subsample of only 131
+tracers.
 
 **Not established:** Venus's climate; whether the crossing configuration actually
 produces encounters, and on what timescale; anything at all beyond the 316-year
 integration. Mutual inclinations are not analysed, so §5 shows only that the
-orbits overlap in radius, not that the bodies come near each other.
+orbits overlap in radius, not that the bodies come near each other — and §6
+inherits the same limitation, since a crossing tracer is one whose radial range
+overlaps a planet's, not one shown to approach it.

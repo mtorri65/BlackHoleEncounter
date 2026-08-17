@@ -110,22 +110,34 @@ years), obliquity essentially unchanged at 23.9°.
 
 | orbit | ≈ calendar | global mean | NH ice edge |
 |---:|---:|---:|---|
-| 1 | 2049 | 261.4 K | **24.6° latitude** |
-| **2** | **2051** | **224.1 K** | **pole to pole** |
-| 3 | 2052 | 210.9 K | frozen |
-| 5 | 2056 | 205.3 K | frozen |
-| 80 | 2192 | **204.7 K** | equilibrium |
+| 1 | 2049 | 259.6 K | **21.9° latitude** |
+| **2** | **2051** | **216.1 K** | **pole to pole** |
+| 3 | 2052 | 197.6 K | frozen |
+| 5 | 2056 | 185.8 K | frozen |
+| 80 | 2192 | **182.1 K (−91.1 °C)** | equilibrium |
 
 **Ice closes over the equator on Earth's second orbit — four calendar years after
 the encounter.** Both feedbacks push together: less sunlight cools the surface,
 ice forms, the brighter surface reflects more, and it cools further.
 
-It is permanent. Escaping a snowball in this model needs roughly 29% *more*
-sunlight than present-day Earth receives.
+It is permanent, because freezing and thawing have different thresholds. Earth
+tips into the snowball once its annual-mean sunlight falls below about 0.95×
+today's, but escaping again needs **1.28× — roughly 28% *more* sunlight than
+present-day Earth receives**. The gap is the ice-albedo feedback, and the new
+orbit delivers well under half.
 
 *(A thermal result only. The oceans reach freezing on this schedule;
 kilometre-thick ice sheets take far longer. The model has no ice-sheet
 dynamics.)*
+
+*(These figures use the **Sellers** nonlinear outgoing-radiation law, which is the
+defensible choice in the frozen regime — see §10 and §6.8 of
+[`CLIMATE_MODEL_REPORT.md`](CLIMATE_MODEL_REPORT.md). Under the simpler linear law
+the same run reads 261.4 / 224.1 / 210.9 / 205.3 / **204.7 K**, some 23 K warmer at
+the floor; that is the figure earlier editions quoted. The freeze schedule is
+identical either way. The two insolation thresholds above are Sellers values too,
+consistent with these temperatures; under the linear law they would be 0.91× and
+1.17×.)*
 
 ---
 

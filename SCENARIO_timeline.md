@@ -32,13 +32,13 @@ survives only in git history.)*
 | 1900 | 787 AU | | 2020 | 152 AU |
 | 1930 | 628 AU | | 2030 | 98 AU |
 | 1955 | 496 AU | | 2040 | 45 AU |
-| 1980 | 364 AU | | 2044 | 23 AU |
+| 1980 | 364 AU | | 2044 | 22 AU |
 | 2000 | 258 AU | | Jan 2047 | 4.9 AU |
 
 Approach speed is **25 km/s ≈ 5.3 AU/yr**, essentially constant beyond 50 AU:
 `v∞` dominates the solar potential across the whole outer approach.
 
-The object emits nothing. It is 295 metres across, has a Hawking temperature of
+The object emits nothing. It is 591 metres across, has a Hawking temperature of
 6×10⁻⁷ K, and sits where there is nothing to accrete. It is optically dark at
 every epoch, to every instrument, for the entire period. Its only signature is
 gravitational — and gravitationally it is enormous.
@@ -69,7 +69,7 @@ outer-planet theory arrives ~1895 and removes the systematic floor.
 | theory error | ~1″ | ~0.3″ | ~0.2″ | ~0.15″ |
 | **SNR** | **0.8** | **3.3** | **9.9** | **27** |
 
-Of the 4.2× gain in significance from 1885 to 1900, about **3.3× is the
+Of the 4.4× gain in significance from 1885 to 1900, about **3.3× is the
 astronomers and only 1.3× is the object.** Newcomb–Hill dominates that first
 decade and a half.
 
@@ -119,7 +119,7 @@ scenario acquires a deadline more than a century before the deadline.
 
 ### 1962–1990 · ranging ends the argument
 
-Venus radar (1961) is *not* decisive here — at 474 AU the accumulated range
+Venus radar (1961) is *not* decisive here — at 459 AU the accumulated range
 signal is a few kilometres against ~50 km precision, and it detects nothing. That
 is a change from the closer configuration this document once described, and it
 gives the argument twenty more years to run on astrometry alone.
@@ -157,8 +157,8 @@ becomes **a point on the sky**.
 | 1900 | 787 AU | photographic plates, Newcomb–Hill | Uranus angle | 1.00″ | ~0.3″ | **3.3** |
 | 1930 | 628 AU | Lowell-era plates, refined theory | Uranus angle | 1.97″ | ~0.2″ | **10** |
 | 1955 | 496 AU | machine numerical ephemerides | Uranus angle | 4.00″ | ~0.15″ | **27** |
-| 1962 | 474 AU | Venus radar ranging | Venus range | ~5 km | ~50 km | **0.1** |
-| 1971 | 426 AU | Mariner 9 orbiter tracking | Mars range | 13 km | ~100 m | **1×10²** |
+| 1962 | 459 AU | Venus radar ranging | Venus range | ~5 km | ~50 km | **0.1** |
+| 1971 | 412 AU | Mariner 9 orbiter tracking | Mars range | 13 km | ~100 m | **1×10²** |
 | 1980 | 364 AU | Viking lander ranging | Mars range | 84 km | 7 m | **1×10⁴** |
 | 1995 | 285 AU | VLBI / ICRF | quasar aberration | 159 µas/yr | ~1 µas/yr | **2×10²** |
 | 2010 | 205 AU | Cassini ranging | Saturn range | 1.4×10⁴ km | 25 m | **6×10⁵** |
@@ -168,8 +168,9 @@ becomes **a point on the sky**.
 ### April 2044 · Neptune at 19.5 AU · September 2046 · Uranus at 16.2 AU
 
 The first two encounters, both distant. The hole crossed Neptune's orbital
-distance around 2042 and is now accelerating hard: it will cover the final
-11 AU in a single year.
+distance in August 2042 and is now accelerating hard: it reaches 11 AU on
+2 January 2046 and closes that last stretch in twenty months — 4.9 AU by the end
+of 2046, inside Earth's orbit by 22 July 2047.
 
 ### 2046 · 11 AU · why the elements still read normal
 
@@ -219,7 +220,7 @@ hole goes negative and stays there. It is no longer a planet of the Sun.
 
 Its new orbit is a = 0.372 AU, e = 0.923, **period 0.72 years**. On 3 July 2048
 it makes its first periapsis passage around the hole, at **0.025 AU** — 3.7
-million km from an object 295 metres across, and fourteen times the distance at
+million km from an object 591 metres across, and fourteen times the distance at
 which it would be torn apart. **Mercury survives intact and leaves as a moon of
 something dark.**
 
@@ -234,8 +235,14 @@ The mechanism is not a close pass but a **differential tug**: the hole pulls the
 Sun and the Earth by different amounts in different directions, and what survives
 is the difference.
 
-**The Moon comes through it**, at 402 000 km against today's 384 000 — still
-bound, still ordinary, orbiting a world about to freeze.
+**The Moon comes through it** — still bound, still ordinary, orbiting a world
+about to freeze. Its orbit is essentially untouched: the semi-major axis ends at
+about 386 000 km against today's 384 400, and the Earth–Moon separation stays
+inside its normal 357 000–407 000 km perigee/apogee spread for the entire
+integration. (The run ends with the Moon near apogee at 402 000 km, which is
+where it happens to be, not a widened orbit.) The binding is verified on relative
+state vectors at every output step in
+[`SCENARIO_post_flyby_system.md`](SCENARIO_post_flyby_system.md) §4.
 
 ### 25 November 2048 · Saturn at 7.41 AU
 
@@ -258,10 +265,19 @@ star.
 | Uranus | 19.299 AU, e 0.051 | 11.485 AU, e 0.679 |
 | Neptune | 30.090 AU, e 0.008 | 29.927 AU, e 0.516 |
 
+*The table above is read from the run's `__planets_run_deltas.csv`.
+[`SCENARIO_post_flyby_system.md`](SCENARIO_post_flyby_system.md) tabulates the
+same run from `bh_captures.csv`, and the two differ slightly — Earth 1.4874 against
+1.4862 AU, Jupiter 5.011 against 5.004 — because the elements are extracted at
+different points. For Saturn the gap looks larger, 1,650 against 1,627 AU, but
+that is the same small difference amplified by e = 0.994, where the semi-major
+axis is hypersensitive to orbital energy. Perihelia and eccentricities agree.*
+
 *What these elements imply — Saturn's effective expulsion (aphelion 3,244 AU on a
 65,600-year period), Venus inheriting Earth's orbit, the seven orbit-crossing
 pairs that make the arrangement unstable beyond the integration, the survival of
-the Earth–Moon system, and the end of annular eclipses — is worked through in
+the Earth–Moon system, the scattering of the asteroid belt onto Earth- and
+Mars-crossing orbits, and the end of annular eclipses — is worked through in
 [`SCENARIO_post_flyby_system.md`](SCENARIO_post_flyby_system.md).*
 
 ---
@@ -275,23 +291,42 @@ Earth's year is now **662 days** — 1.81 calendar years — and it receives abo
 
 | Earth orbit | ≈ calendar | Global mean | Northern ice edge |
 |---:|---:|---|---|
-| 1 | 2049 | 261.4 K | **24.6° latitude** |
-| **2** | **2051** | **224.1 K** | **pole to pole** |
-| 3 | 2052 | 210.9 K | frozen |
-| 5 | 2056 | 205.3 K | frozen |
-| 80 | 2192 | **204.7 K** | equilibrium |
+| 1 | 2049 | 259.6 K | **21.9° latitude** |
+| **2** | **2051** | **216.1 K** | **pole to pole** |
+| 3 | 2052 | 197.6 K | frozen |
+| 5 | 2056 | 185.8 K | frozen |
+| 80 | 2192 | **182.1 K (−91.1 °C)** | equilibrium |
 
 By the end of Earth's *first* orbit the permanent ice edge has reached the
 subtropics. **On the second orbit — 2051, four calendar years after the
 encounter — the ice closes over the equator.** Everything after that is a frozen
-planet settling toward its 205 K floor.
+planet settling toward its **182 K** floor.
 
-It is permanent. Escaping this state needs about 29% more sunlight than
-present-day Earth receives. There is no path back within the century, or any
+**It is permanent, and the reason is that freezing and thawing have different
+thresholds.** Earth tips into the snowball once its annual-mean sunlight falls
+below about **0.95×** today's, but climbing back out takes **1.28×** — some **28%
+more sunlight than present-day Earth receives**. That gap is the ice-albedo
+feedback: a white planet reflects most of what arrives, so restoring the original
+sunlight is nowhere near enough to undo the original freeze. The new orbit
+delivers well under half. There is no path back within the century, or any
 century.
 
 *(Caveat: a thermal result. Oceans reach freezing on this schedule;
-kilometre-thick ice sheets take far longer. The model has no ice-sheet dynamics.)*
+kilometre-thick ice sheets take far longer. The model has no ice-sheet dynamics.
+The two thresholds above are Sellers-OLR values, consistent with the temperatures
+in this section; under the linear law they would be 0.91× and 1.17×.)*
+
+> **Which outgoing-radiation law?** These figures use the **Sellers** nonlinear
+> OLR, which is the defensible choice here: §10 of
+> [`CLIMATE_MODEL_REPORT.md`](CLIMATE_MODEL_REPORT.md) documents the simpler
+> linear (Budyko) law failing at exactly the cold end this run occupies, because
+> its emission collapses toward zero and a frozen planet stops shedding heat
+> properly. Under the linear law the same run reads 261.4 / 224.1 / 210.9 / 205.3
+> / **204.7 K** — some 23 K warmer at the floor, and the figure earlier editions
+> of these documents quoted. The effect is systematic, a median 15.97 K across all
+> 1,182 snowball runs in the sweep (§6.8). **The freeze schedule is identical
+> either way** — ice still closes over the equator on the second orbit; only the
+> floor moves.
 
 ### Mars, meanwhile, has a season
 
@@ -328,7 +363,7 @@ model cannot answer.
 ### 2100
 
 The black hole is 283 AU away and receding, with Mercury in a 0.72-year orbit
-around it. Earth is a frozen world at 205 K and will remain one. Saturn is
+around it. Earth is a frozen world at 182 K and will remain one. Saturn is
 somewhere past a thousand astronomical units on an orbit it will not keep. And
 Mars — smaller, colder, and now the third planet rather than the fourth — has six
 weeks each year in its southern subtropics during which water could, in
@@ -356,17 +391,30 @@ trajectory, compared against representative period instrument precisions. It is
 not the output of an ephemeris-fitting experiment, and the appendix states where
 it is weakest.
 
-**Not modelled at all:** tidal or relativistic effects, the asteroid belt
-(`n_belt = 0` in this run), and everything about the biosphere — including,
-pointedly, what a civilisation does with a century and a half of warning. Act I
-establishes that the warning exists. What happens inside it is not a question
-this repository can answer.
+**Not modelled at all:** tidal or relativistic effects, and everything about the
+biosphere — including, pointedly, what a civilisation does with a century and a
+half of warning. Act I establishes that the warning exists. What happens inside it
+is not a question this repository can answer.
+
+**The asteroid belt is absent from this run** (`n_belt = 0`), so nothing above
+reflects it. A companion run at identical parameters
+(`simulations/20260815_171552/`) adds 4,000 belt tracers and finds the belt thrown
+onto Earth- and Mars-crossing orbits; see §6 of
+[`SCENARIO_post_flyby_system.md`](SCENARIO_post_flyby_system.md). That opens an
+era of impacts which none of the dates above account for.
 
 **And this is one run of 4032.** It ranks 63rd on orbital disruption — not an
 extreme event — but it is one of only four that freeze the Earth, hand a planet
 to the black hole, and open a Martian water window at the same time, and the best
-of those four. A typical flyby in this sweep does none of it. The century
-described here is a possibility, not a prediction.
+of those four: its 7.2% water window against 1.7% for the alternative. A typical
+flyby in this sweep does none of it. The century described here is a possibility,
+not a prediction.
+
+*Read those counts with §7a of
+[`SCENARIO_2047_assumptions.md`](SCENARIO_2047_assumptions.md) in hand: the sweep
+is exactly twofold redundant, so 4032 runs are ~2016 distinct configurations, and
+the four qualifying runs are two mirror pairs — **two configurations, not four.**
+This run's twin ranks 64th with an identical score.*
 
 ---
 

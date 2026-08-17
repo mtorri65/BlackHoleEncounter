@@ -40,19 +40,23 @@ difference in results traces to those, **not** to encounter speed.
   not sweep output — unaffected by the change, except §5.4 and §5.7–§5.8, which
   have been restated for the current sweep.
 - **§6.1–§6.4, §7.6–§7.7** have been **regenerated against the current sweep**.
-- **Transient, two-surface, Milankovitch and Sellers results have been removed**
-  (they occupied §6.5–§6.8). They were measured on the retired sweep and were never
-  re-run, since each needs a separate pass of the climate model with non-default
-  options. Rather than leave stale numbers behind a warning label, the sections are
-  gone and §6.5 now records what they covered, what survives of them, and how to
-  regenerate. **This report currently has no results for transient behaviour, the
-  land/ocean split, or nonlinear OLR.**
+- **§6.5–§6.8 (transient, two-surface, Milankovitch, Sellers) were regenerated on
+  2026-08-15/16 and are complete.** They had been removed rather than left behind
+  a warning label, because they were measured on the retired sweep; five further
+  passes of the climate model with non-default options have now restored them,
+  varying OLR form and surface treatment one at a time. Each section states its
+  provenance. One retired claim — the "sign flip" in §6.7 — **did not reproduce
+  and has been withdrawn**, and two others (overshoot "exactly zero", the
+  glacial-inception percentages) have been restated.
 - **§8 (corrections)** deliberately preserves superseded numbers where they record
   a claim that turned out wrong. That is the point of the section — do not "fix"
   those.
 
 The current sweep's derived products live in the repository root as
-`simulations/20260811_184731_{climate,mars_climate,earth_elements,impact_ranking,bh_captures}.csv`.
+`simulations/20260811_184731_{climate,mars_climate,earth_elements,impact_ranking,bh_captures}.csv`,
+plus the five variant climate passes added for §6.5–§6.8: `_climate_sellers.csv`,
+`_climate_2surf.csv`, `_climate_sellers_2surf.csv`, `_climate_2surf_transient.csv`
+and `_climate_sellers_transient.csv`.
 Every regenerated figure below is computed from those files.
 
 ---
@@ -176,8 +180,8 @@ and `a_ice` where `T < T_ice`.
 
 The linear OLR `A + B·T` shown here is the default. A nonlinear alternative
 (Sellers 1969) was added later once its validity range proved too narrow for
-this sweep — see §10 for the failure analysis. The sweep-wide consequences were
-measured only on the retired sweep and have been removed pending regeneration (§6.5).
+this sweep — see §10 for the failure analysis, and §6.8 for the sweep-wide
+consequences, measured on the current sweep.
 
 ### 3.2 Discretisation
 
@@ -604,39 +608,241 @@ rather than redundant. The coupling is somewhat tighter in the current sweep but
 the conclusion is unchanged: knowing how violently a run disturbed the system
 still explains under half the variance in what it did to Earth's climate.
 
-### 6.5 Transient, two-surface, Milankovitch and Sellers — *removed, pending regeneration*
+*§6.5–§6.8 were regenerated against the current sweep on 2026-08-15/16, replacing
+retired-sweep figures that had been excised. Five variant passes were run, varying
+OLR form and surface treatment one factor at a time; provenance is stated in each
+section. §6.7 additionally uses a controlled single-configuration experiment that
+does not depend on the sweep at all.*
 
-Four results sections stood here: transient adjustment, the two-surface
-land/ocean results, the Milankovitch signal and its regime dependence, and the
-sweep re-run under the Sellers nonlinear OLR. Every count and percentage in them
-was measured on the retired 672-run sweep.
+### 6.5 Transient adjustment
 
-**They have been removed rather than left in place behind a warning.** A flagged
-number is still a number, and this report is quoted from. Nothing here now
-describes a sweep that no longer exists.
+*Sellers OLR throughout, 40-year integrations, 3,904 usable runs each
+(`_climate_sellers_transient.csv`, `_climate_2surf_transient.csv`). Both passes
+hold the OLR fixed so that only the surface treatment differs.*
 
-*(They were §6.5–§6.8. The numbering gap before §6.9 is deliberate: it marks the
-excision, and it keeps external references to §6.9 — the capture census, cited
-from [`SCENARIO_post_flyby_system.md`](SCENARIO_post_flyby_system.md) — resolving.)*
+| | single surface | two surface |
+|---|---:|---:|
+| years to equilibrium (median) | **10** | **14** |
+| …90th percentile | 17 | 23 |
+| …still moving at the 40-yr cap | 23 (0.6%) | 40 (1.0%) |
+| peak hemispheric asymmetry | 4.04 K median, 43.37 K max | **4.97 K** median, 28.33 K max |
+| …the same at equilibrium | 0.06 K median | 0.16 K median |
+| temperature overshoot | max **0.0369 K** | max **0.0293 K** |
+| ice-edge migration (median) | 8.55° | 8.55° |
+| peak migration rate | up to 46.2°/yr | up to 35.8°/yr |
+| peak asymmetry >5 K decaying to <1 K | 1,380 (35.3%) | **1,712 (43.9%)** |
 
-What they established that does *not* depend on those statistics is preserved:
+**Two surfaces equilibrate more slowly and more lopsidedly**, 14 years against 10
+and a higher median asymmetry — the retired sweep gave 15 against 11 and the same
+ordering, so this is a property of the formulation rather than the sample. The
+land surface responds on a 7-day time constant and the ocean on 3.2 years, so the
+blended state carries a slow component the single-surface model does not have.
 
-- Temperature overshoot is exactly zero and the approach to equilibrium is
-  monotonic; equilibrium results are robust to initial conditions; a blended heat
-  capacity is not a useful approximation (§8, where all three are recorded as
-  negative results, with their retired-sweep provenance marked).
-- The linear OLR's cold-end failure, the Sellers form that fixes it, and the
-  Simpson–Nakajima runaway ceiling are described in §10.
-- The two-surface formulation itself, its calibration and its validation are
-  Part III (§4) and are unaffected — they are model construction, not sweep
-  output.
+The *maxima* run the other way — single surface reaches 43.4 K of asymmetry
+against 28.3 K — and the retired sweep had that ordering reversed. Maxima here are
+single-run extremes from the violent tail and should not be read as a property of
+either model; the medians are the robust comparison. The peak *migration rate*
+ordering does reproduce (single faster, 46 against 36 °/yr, retired 44 against 30).
 
-**Regenerating them** means three further passes of
-[`climate_from_simulations.py`](climate_from_simulations.py) over the current
-sweep with non-default options (`--two-surface`, `--olr-model sellers`,
-`--transient`); see §12 for the commands. Until then this report has **no current
-results** for transient behaviour, the land/ocean split, or nonlinear OLR, and
-should not be cited for any of the three.
+**The headline transient result reproduces and strengthens.** A peak hemispheric
+asymmetry above 5 K that decays to under 1 K occurs in **1,712 runs (43.9%)** with
+two surfaces and **1,380 (35.3%)** with one, and it peaks in **year 1** — both the
+median and the mode. A third to a half of the sweep passes through a substantially
+lopsided climate that leaves **no trace whatsoever** in the equilibrium state —
+information the equilibrium sweep structurally cannot produce. The retired sweep
+put this at 31% without stating which mode; both current figures exceed it, and
+the mechanism is unchanged.
+
+**Adjustment is fast.** Median 14 years to equilibrium in the slower of the two
+modes, 90th percentile 23, and only **40 runs (1.0%)** still moving at the 40-year
+cap. The 40-year integration length is therefore adequate — a point worth
+recording, since the retired sweep used 60.
+
+**The typical run does all its ice-edge migration in year one.** Median migration
+and median peak migration *rate* are the same number, 8.55° and 8.55°/yr, in both
+modes. Combined with asymmetry peaking in year 1, the picture is a single abrupt
+adjustment followed by a decade of settling, not a gradual drift.
+
+**Overshoot is not quite exactly zero, in either mode.** Medians are 0.0000 K but
+the maxima are **0.0369 K** (single surface) and **0.0293 K** (two surface), with
+8 runs above 0.01 K in each. The retired sweep reported "0 everywhere". The
+physical conclusion is unchanged — approach to equilibrium is monotonic to within
+four hundredths of a kelvin — but the negative-results list in §8 now says *at
+most 0.04 K* rather than *exactly zero*.
+
+### 6.6 Two-surface results
+
+*Two-surface equilibrium, linear OLR (`_climate_2surf.csv`), against the
+single-surface baseline. Within the defensible 250–300 K band: **1,125 runs**.*
+
+65 °N seasonal range:
+
+| | median |
+|---|---:|
+| Single-surface | 11.2 K |
+| Two-surface, blended | 23.6 K |
+| **Two-surface, land** | **41.3 K** |
+| Two-surface, ocean | 8.9 K |
+
+**This reproduces the retired sweep almost exactly** (10.3 / 23.2 / 41.2 / 8.5),
+which is the expected result: within the habitable band these are properties of
+the surface formulation and its calibration, not of the orbital sample.
+
+Global mean is essentially unchanged, **293.26 → 293.33 K**, and the snowball
+count barely moves, **1,182 → 1,174**. The land/ocean split redistributes seasonal
+amplitude; it does not alter the annual energy balance. Across all non-runaway
+runs the land seasonal range is **4.43×** the ocean's (36.1 vs 8.2 K).
+
+The practical consequence is §6.7: any question about *seasonal* extremes — 
+glacial inception above all — is unanswerable in the single-surface model, which
+damps the signal by a factor of about four.
+
+### 6.7 The Milankovitch signal — and the regime dependence
+
+**The controlled experiment reproduces exactly.** Holding `a` at 1.0 AU and
+raising `e` from 0.0167 to 0.117 drops 65 °N peak insolation **477.9 → 399.4 W/m²**
+(the 480 → 400 scenario):
+
+| Model | 65 °N summer peak change | retired sweep |
+|---|---:|---:|
+| Single surface | **−0.03 K** — nothing | −0.04 K |
+| Two-surface, **land** | **−7.51 K** | −7.53 K |
+| Two-surface, ocean | +0.03 K | −0.02 K |
+
+This is a property of the model, not the sweep, so it is epoch-independent and
+survives the sweep change untouched. The two-surface model recovers the
+glacial-inception signal the single-surface model misses entirely: with a 7-day
+land time constant the surface tracks the insolation drop almost directly, while
+the 3.2-year ocean damps it to nothing. The magnitude sits in the ~4–6 K range the
+context document cites for direct orbital summer cooling, with the right sign.
+
+**The sweep-wide statistics flipped sign with the epoch.** Across the 1,125
+band runs:
+
+| 65 °N summer-peak change | single surface | two-surface land |
+|---|---:|---:|
+| median | **+1.24 K** | **+1.76 K** |
+| runs cooling > 4 K | 394 (35%) | 310 (28%) |
+
+The retired sweep gave −6.31 K / −3.37 K and 63% / 47%. The reversal is the same
+epoch effect as §6.1 — median post-flyby `a` moved inward, so the typical run now
+*warms*. **What survives is the ordering**: the single-surface model still reports
+more cooling than land does, for the reason the retired edition gave — a heavily
+damped world has summer ≈ annual mean and inherits the full annual-mean change,
+while land sits well above the annual mean in summer and is partly buffered.
+
+> **A retired claim that does *not* reproduce.** The retired §6.7 isolated
+> "orbital *shape* change only" as the 72 runs with `a` within 2% of 1.0 AU, and
+> reported a **sign flip** — single-surface summer +0.48 K (warming) against land
+> −0.98 K (cooling). On the current sweep that subset (454 runs) does not hold the
+> annual mean fixed at all: its median insolation is **+3.05 W/m²** above baseline.
+> Selecting properly, on runs whose annual-mean insolation is within 2 W/m² of
+> baseline (**52 runs**, median ΔT −0.23 K), gives single-surface **+0.12 K** and
+> land **+1.66 K** — both warming, **no sign flip**. Tightening to 1.0 and
+> 0.5 W/m² (26 and 8 runs) does not change that. The retired conclusion appears to
+> have rested on a subset that was not the controlled comparison it was described
+> as. The controlled experiment above is the load-bearing evidence for the
+> land/ocean seasonal result; this sweep-subset claim is withdrawn.
+
+**Accurate statement:** the two-surface model resolves a summer signal the
+single-surface model cannot see, demonstrated cleanly in the controlled
+experiment. Across a sweep where semi-major axis varies from 0.63 to 2.8 AU,
+annual-mean insolation changes dominate and the two models differ mainly in
+degree, with the single-surface one over-predicting cooling.
+
+### 6.8 Nonlinear OLR: re-running the sweep with Sellers
+
+*Sellers OLR, single surface (`_climate_sellers.csv`), against the single-surface
+linear baseline — so this isolates the OLR change alone. The retired edition
+combined Sellers with two surfaces and could not separate the two.*
+
+| | linear | **Sellers** |
+|---|---:|---:|
+| pre-flyby baseline | 288.19 K | **288.60 K** |
+| median outcome | 293.26 K | **294.13 K** |
+| coldest run | 185.2 K | **136.2 K** |
+| hottest run | 976.4 K | **488.9 K** |
+| snowball runs | 1,182 | **1,364** |
+| runaway flagged | 894 | **894** |
+
+**The cold band moved exactly as predicted, and by the same amount as before.**
+For the 1,180 runs the linear form placed below 230 K, Sellers is **16.0 K colder**
+on median — against 16.1 K in the retired sweep, on a sweep six times larger and
+at a different epoch. That is the under-cooling bias of §10 being removed: once a
+freezing atmosphere radiates toward blackbody instead of collapsing toward zero
+emission, those worlds shed heat properly and settle colder.
+
+**The effect is confined to the cold end**, which the single-surface isolation
+makes clean. Per run:
+
+| | median change |
+|---|---:|
+| runs already snowball under linear (n = 1,182) | **−15.97 K** |
+| runs not snowball under linear (n = 1,828) | **+0.20 K** |
+
+182 runs cross into snowball and **none cross out**. Non-runaway snowball
+fraction rises 39.3% → 45.3% (n = 3,010).
+
+**Note the median outcome rises while the median per-run change is negative**
+(+0.87 K on the distribution, −2.79 K per run over non-runaway runs). There is no
+contradiction: the distribution is bimodal, and Sellers pushes the already-cold
+mode much colder while leaving the warm mode — which contains the median run —
+essentially alone. Quote whichever answers the question being asked, and say which.
+
+**The hot tail contracted** from 976.4 K to 488.9 K, because Sellers emits far
+more at high temperature than a linear extrapolation. **Runaway detection is
+unchanged at 894 runs (22.9%)**, as it must be — the Simpson–Nakajima test keys
+off absorbed flux, not the OLR parameterisation.
+
+| regime under Sellers | runs | share |
+|---|---:|---:|
+| cold, now physical (< 230 K) | 1,364 | 35% |
+| defensible (230–300 K) | 868 | 22% |
+| stretched (300–320 K) | 778 | 20% |
+| **runaway — no equilibrium exists** | **894** | **23%** |
+
+**Glacial inception grows under Sellers, but far less than the retired sweep
+found.** From the combined pass (`_climate_sellers_2surf.csv`), runs cooling more
+than 4 K over land at 65 °N:
+
+| | linear + two surface | **Sellers + two surface** |
+|---|---:|---:|
+| runs cooling >4 K over land | 1,486 (49%) | **1,540 (51%)** |
+
+*Denominator is all 3,010 non-runaway runs, deliberately.* The retired edition
+computed this within the 250–300 K band, which is not a fair comparison across OLR
+forms: Sellers moves runs out of the band, so the band population itself falls from
+1,135 to 911 and the two percentages have different denominators. On the band
+definition the figures are 28% and 22% — an apparent *decrease* that is an artefact
+of the shrinking denominator, not a physical result. The retired 47% → 57% should
+be read with that caveat.
+
+**OLR and surface treatment are very nearly independent.** Snowball counts across
+the full 2×2:
+
+| | linear | Sellers |
+|---|---:|---:|
+| single surface | 1,182 | 1,364 |
+| two surface | 1,174 | 1,346 |
+
+The OLR form moves the count by +182 and +172; the surface split moves it by −8
+and −18. The two factors barely interact, which is why varying them one at a time
+— as §6.6 and this section do — loses almost nothing. It also retroactively
+justifies the retired edition's combined pass: with an interaction this small, its
+Sellers results were not materially contaminated by the simultaneous surface change.
+
+> **This changed a number the narrative documents quote.** The adopted scenario
+> run (`…rp0p75…om30`) is a snowball, so it sits in exactly the regime where the
+> two OLR forms diverge: **204.70 K under linear, 182.09 K under Sellers**. The
+> scenario documents quoted the linear value, 205 K, throughout. **They were
+> switched to the Sellers value on 2026-08-16**, since §10's argument applies
+> directly and the colder figure is the one this report's own physics supports.
+> The full decline trajectory was regenerated under both forms for that run —
+> 261.4 / 224.1 / 210.9 / 205.3 / 204.7 K linear against 259.6 / 216.1 / 197.6 /
+> 185.8 / 182.1 K Sellers, at orbits 1, 2, 3, 5 and 80 — and the linear column
+> reproduces the previously published table exactly, which is what validates the
+> Sellers column beside it. **The freeze schedule is identical under both**: ice
+> closes over the equator on the second orbit either way.
 ### 6.9 Where the planets end up — the capture census
 
 *Current sweep. New section: this analysis did not exist when the report was
@@ -868,7 +1074,8 @@ Recorded deliberately — several initial claims did not survive testing.
 | "Obliquity change is a first-order effect" — based on one sampled run showing 23° → 74° | Full distribution: median change ~0; only **3%** of runs shift >10°, 0.3% >30°. The 74° case is an outlier. |
 | "Adding two surfaces will require re-tuning `coalbedo_a0` and all results will shift" | **Not needed.** Global mean moved 288.14 → 288.42 K. Equilibrium is set by radiation balance, not heat capacity. |
 | "The transient may land in a different attractor than `run_equilibrium` (which starts from a uniform 15 °C guess rather than Earth's real profile)" | **Tested 12 runs straddling the bifurcation: zero flips.** Equilibrium results are robust to initial conditions. |
-| "The old model missed the glacial-inception signal" | **Regime-dependent.** True for pure eccentricity injection; across this sweep the single-surface model actually *over*-predicts summer cooling (63% vs 47%). |
+| "The old model missed the glacial-inception signal" | **Regime-dependent.** True for pure eccentricity injection — the controlled experiment gives −7.51 K over land against −0.03 K single-surface. Across the sweep the single-surface model actually *over*-predicts summer cooling (35% vs 28% of band runs cooling >4 K; the retired sweep gave 63% vs 47%, and the sign of the median flipped with the epoch — §6.7). |
+| "Restricting to runs with `a` within 2% of 1.0 AU isolates orbital *shape* change, and shows a single-surface/land **sign flip**" (retired §6.7) | **Withdrawn — the subset was not the control it was described as.** On the current sweep those 454 runs sit **+3.05 W/m²** above baseline in annual-mean insolation, so the annual mean is not held fixed. Selecting on insolation instead (52 runs within 2 W/m²) gives single-surface +0.12 K and land +1.66 K — both warming, no sign flip, and stable under tightening to 1.0 and 0.5 W/m². The controlled experiment, not this subset, is what carries the land/ocean seasonal result. |
 | A hardcoded Kepler test constant of 1.1934205 | Recomputed independently: **1.1853242**. The original would have validated a broken solver. |
 | Apparent `λ_p` → temperature correlation of +0.59 | **Spurious** — collinear with `a`. Controlling for insolation: −0.22. |
 | "A second planet will need *more* approximation than Earth" | **Backwards.** Mars's radiation is *simpler*: emissivity 1.00 makes `σT⁴` exact rather than fitted, removing the Earth model's narrowest validity limit entirely. |
@@ -878,11 +1085,13 @@ Recorded deliberately — several initial claims did not survive testing.
 
 ### 7.2 Genuine negative results
 
-* **Temperature overshoot is exactly zero**, in both single- and two-surface
-  modes. The approach to equilibrium is monotonic. This was one of the stated
-  motivations for running transients and it simply does not occur.
-  *(Measured across the retired sweep's 644 usable runs; not re-tested since —
-  see §6.5. A qualitative result, but the evidence for it is not current.)*
+* **Temperature overshoot is at most 0.04 K**, i.e. physically zero. The approach
+  to equilibrium is monotonic. This was one of the stated motivations for running
+  transients and it essentially does not occur. *(Re-measured on the current
+  sweep in both modes, 3,904 runs each, Sellers OLR: median 0.0000 K in both;
+  max 0.0369 K single surface and 0.0293 K two surface; 8 runs above 0.01 K in
+  each — §6.5. The retired edition claimed "exactly zero"; the current evidence
+  supports "negligible", not "identically zero".)*
 * **Initial-condition bistability does not occur** in the tested range, despite
   the model having a genuine bifurcation. *(12 runs straddling the bifurcation,
   retired sweep.)*
@@ -1116,11 +1325,17 @@ the encounter or the engine writes Parquet directly.
 
 ### Reproduction
 
-The current sweep is `<STAMP>` = `20260811_184731`. Steps 2–5b below were run
-against it and produced the `simulations/20260811_184731_*.csv` files this report
-quotes — **with default options** (linear OLR, single surface, equilibrium). The
-`--olr-model sellers --two-surface` and `--transient` variants shown have **not**
-been run against the current sweep — running them is exactly what §6.5 asks for.
+The current sweep is `<STAMP>` = `20260811_184731`.
+
+> **`--out` is mandatory on every variant pass.** The output filename is built
+> from the `--transient` flag alone — `_climate` or `_climate_transient` — and
+> **ignores `--two-surface` and `--olr-model` entirely**
+> ([`climate_from_simulations.py:442`](climate_from_simulations.py#L442)). An
+> equilibrium pass run without `--out` therefore overwrites
+> `<STAMP>_climate.csv`, the default-options file that §6.1–§6.4 quote. Since
+> `simulations/` is gitignored there is no way back except re-running step 4.
+> Earlier editions of this block omitted `--out`; steps 4a, 4b and 5 below now
+> carry it.
 
 ```bash
 # 0. Dependencies
@@ -1138,17 +1353,39 @@ python find_bh_captures.py simulations/<STAMP>
 # 3. Recover Earth's post-flyby orbital elements (~10 min, 5 workers)
 python extract_earth_elements.py simulations/<STAMP> --workers 5
 
-# 4. Climate across the sweep — equilibrium
-#    --olr-model sellers keeps frozen states physical; omit it for the
-#    original linear (Budyko) form.
+# 4. Climate across the sweep — equilibrium, default options (linear OLR,
+#    single surface). THIS is what <STAMP>_climate.csv holds and what
+#    sections 6.1-6.4 quote.
 python climate_from_simulations.py simulations/<STAMP> \
-    --config input_climate.yaml --olr-model sellers --two-surface \
-    --workers 5 --plot climate.png
+    --config input_climate.yaml --workers 5 --plot climate.png
 
-# 5. Climate across the sweep — transient
+# 4a. Sellers equilibrium  -- isolates the OLR change against step 4  (~25 min)
+python climate_from_simulations.py simulations/<STAMP> \
+    --config input_climate.yaml --olr-model sellers --workers 5 \
+    --out simulations/<STAMP>_climate_sellers.csv
+
+# 4b. Two-surface equilibrium -- isolates the land/ocean split  (~30 min)
+python climate_from_simulations.py simulations/<STAMP> \
+    --config input_climate.yaml --two-surface --workers 5 \
+    --out simulations/<STAMP>_climate_2surf.csv
+
+# 4c. Sellers + two-surface equilibrium -- the combined pass, for the
+#     OLR x surface interaction and glacial inception  (~43 min)
+python climate_from_simulations.py simulations/<STAMP> \
+    --config input_climate.yaml --olr-model sellers --two-surface --workers 5 \
+    --out simulations/<STAMP>_climate_sellers_2surf.csv
+
+# 5. Climate across the sweep — transient, two surface  (~83 min)
 python climate_from_simulations.py simulations/<STAMP> \
     --config input_climate.yaml --olr-model sellers --two-surface \
-    --transient --years 40 --workers 5
+    --transient --years 40 --workers 5 \
+    --out simulations/<STAMP>_climate_2surf_transient.csv
+
+# 5a. Transient, single surface -- the comparison arm for section 6.5  (~61 min)
+python climate_from_simulations.py simulations/<STAMP> \
+    --config input_climate.yaml --olr-model sellers \
+    --transient --years 40 --workers 5 \
+    --out simulations/<STAMP>_climate_sellers_transient.csv
 
 # 5b. Mars: recover its elements (any planet via --body), then run its climate
 python extract_mars_elements.py simulations/<STAMP>_parquet --body Mars --workers 5
@@ -1165,9 +1402,12 @@ python convert_orbits_to_parquet.py simulations/<STAMP> --workers 5
 |---|---|
 | `<STAMP>_impact_ranking.csv` | Orbital disruption score per run |
 | `<STAMP>_earth_elements.csv` | Recovered `a, e, ε, λ_p`, year length, bound flag |
-| `<STAMP>_climate.csv` | Single-surface equilibrium climate |
-| `<STAMP>_climate_2surf.csv` | Two-surface equilibrium climate + land/ocean seasonal columns |
-| `<STAMP>_climate_2surf_transient.csv` | Transient adjustment metrics |
+| `<STAMP>_climate.csv` | Single-surface equilibrium climate, linear OLR — the default-options baseline |
+| `<STAMP>_climate_sellers.csv` | As above under the Sellers nonlinear OLR (step 4a) |
+| `<STAMP>_climate_2surf.csv` | Two-surface equilibrium climate + land/ocean seasonal columns (step 4b) |
+| `<STAMP>_climate_sellers_2surf.csv` | Sellers + two-surface equilibrium; the combined pass (step 4c) |
+| `<STAMP>_climate_2surf_transient.csv` | Transient adjustment metrics, two surface (step 5) |
+| `<STAMP>_climate_sellers_transient.csv` | Transient adjustment metrics, single surface (step 5a) |
 
 ---
 

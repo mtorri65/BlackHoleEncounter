@@ -27,7 +27,9 @@ eccentric orbit and freezes solid within about four years. It keeps the Moon.
 **Mercury leaves with the black hole**, captured into orbit around it.
 **Saturn is thrown out** to a 3,244 AU aphelion. **Venus is pushed outward into
 Earth's vacated orbit.** Mars is nudged inward and, for the first time in its
-history, becomes marginally habitable.
+history, becomes marginally habitable. **The asteroid belt is stirred** onto
+orbits that cross both Earth's and Mars's, opening an era of impacts that arrives
+long after the black hole has gone.
 
 The crucial structural fact: **this is not a surprise.** The object is
 gravitationally detectable from around 1900 and unambiguous within a generation.
@@ -99,7 +101,7 @@ This is the compressed part. Nineteen months, most of it in six weeks.
 ### Act III — Consequence (2049–2100)
 
 - **Earth freezes in about four years.** Ice reaches the equator; equilibrium at
-  **205 K (−68 °C)**.
+  **182 K (−91 °C)**.
 - **Mars has a season.** Pulled inward to 1.336 AU with eccentricity 0.217; liquid
   water becomes possible for **7.2% of the year at latitude −21.5°**.
 - By **2100** the system has settled into its new, unstable arrangement.
@@ -223,12 +225,27 @@ actually have concluded, argued about, or refused to believe is yours — see §
 
 - Semi-major axis **1.000 → 1.486 AU**, eccentricity **0.017 → 0.236**.
 - Year lengthens to **662 days**.
-- Equilibrium **205 K (−68 °C)**; the ocean freezes; ice reaches the equator by
+- Equilibrium **182 K (−91 °C)**; the ocean freezes; ice reaches the equator by
   roughly year 2 of the decline, equilibrium in about four.
 - Obliquity almost unchanged (23.5° → 23.9°) — seasons keep their tilt, but the
   eccentricity now dominates. The planet swings between 1.13 and 1.84 AU each
   year, so "seasons" become a distance effect, not a tilt effect.
 - **The Moon is still there**, unchanged.
+
+> **On the −91 °C figure.** Earlier editions of these documents said **205 K
+> (−68 °C)**, and you may meet that number in older notes. It came from the
+> simpler linear outgoing-radiation law, whose emission collapses toward zero on a
+> frozen planet and so lets the world sit artificially warm. The Sellers nonlinear
+> law used here is the defensible one at the cold end, and across the sweep's 1,182
+> frozen runs it is a median 16 K colder. Nothing else moves — same freeze
+> schedule, same permanence, ice over the equator on the second orbit either way.
+>
+> **Why the colder number is better material.** −91 °C is below the lowest
+> temperature ever measured on Earth's surface: **−89.2 °C, Vostok Station,
+> 21 July 1983**. So the post-flyby global mean is colder than the coldest place
+> and moment in recorded terrestrial history — not as an extreme, as the *average*.
+> That is a cleaner and more forceful way to state the ruin than a number people
+> can compare to an ordinary Antarctic winter.
 
 ### The sky from Earth
 
@@ -252,6 +269,38 @@ actually have concluded, argued about, or refused to believe is yours — see §
 | **Saturn** | 1,627 AU, e 0.994 | aphelion 3,244 AU, period 65,600 years — effectively expelled |
 | **Uranus** | 11.49 AU, e 0.679 | driven *inward*, now crosses Jupiter's orbit |
 | **Neptune** | 29.9 AU, e 0.515 | keeps its distance, gains huge eccentricity |
+
+### The asteroid belt
+
+The belt is the slow half of the disaster, and it is the part that outlives
+everyone.
+
+Before the flyby it is cleanly separated — nothing in it crosses any planet's
+orbit. Afterwards **about 40% of it crosses Earth's new orbit and about 31%
+crosses Mars's**, because both planets have moved into the belt's reach: Earth
+outward to 1.13–1.84 AU, Mars inward to 1.05–1.63 AU. Roughly 1% of the belt is
+thrown out of the solar system entirely, and only 47% is left where it started.
+
+Within the model's assumptions this works out to a **≥1 km impact roughly every
+200 years on Earth and every 250 years on Mars**. Treat those as order-of-magnitude
+figures — see the caveat below — but the direction is not in doubt.
+
+**The dramatic shape of this matters.** It is not a bombardment during the
+passage; the tracers are scattered in 2047 and then take centuries to arrive. What
+the flyby creates is a permanently elevated hazard in a solar system where the
+planets have moved into the debris, not a rain of fire. For a Mars colony in the
+habitability window, this is the constraint with teeth: **the one place worth
+living is also in the line of fire**, and the interval between civilisation-scale
+impacts is shorter than the recorded history of Earth.
+
+*Caveat, if precision matters to a scene:* the impact intervals come from a
+present-day per-object impact probability applied to a rearranged solar system,
+and from a sample containing only 131 objects above 1 km. The fraction of the belt
+that crosses is solid; the years-between-impacts figure is good to a factor of a
+few. Also, "nothing crossed before" is a property of how the simulated belt was
+set up (clean orbits, 2–3.5 AU) — the real belt does leak asteroids inward today.
+The claim is that the flyby raises the rate enormously, not that the pre-flyby
+solar system was safe.
 
 ### The system is not stable
 
@@ -277,8 +326,10 @@ Mars's habitability window is real but not shown to be durable.
 | Tidal effect at closest | 2.1% of the Moon's |
 | Einstein ring at closest | 11.4 arcsec |
 | Peak apparent speed | 1.78°/day (4 Sept 2047) |
-| Earth after | 1.486 AU, e 0.236, 205 K, 662-day year |
+| Earth after | 1.486 AU, e 0.236, 182 K (−91 °C), 662-day year |
 | Mars after | 1.336 AU, e 0.217, water 7.2% of year at −21.5° |
+| Belt after | ~40% crosses Earth's orbit, ~31% Mars's; none crossed before |
+| Impacts after | ≥1 km every ~200 yr (Earth), ~250 yr (Mars) — order of magnitude |
 
 ---
 
@@ -293,7 +344,12 @@ about:
   all — all equally consistent with the physics.
 - **Mars colonisation.** The window is real; whether it is reachable, usable, or
   worth the attempt is entirely yours. Note it is *marginal* — 7% of a year at
-  one latitude, not a garden.
+  one latitude, not a garden — and that the impact rate there is elevated for as
+  long as anyone would want to stay.
+- **The impact era.** The simulation establishes that the belt crosses the
+  planets and roughly how often something large arrives. Whether that means a
+  colony spends its life underground, builds a watch, gets unlucky early, or
+  simply accepts the odds is yours. The physics gives you a clock, not a plot.
 - **Venus.** The simulation moves it into Earth's orbit and stops. Whether a
   92-bar runaway greenhouse cools when its sunlight drops 45% is genuinely
   unknown — the climate model in this project cannot answer it, and I would not
@@ -318,8 +374,15 @@ Common instincts that this scenario does not support:
 - ❌ *The black hole "hits" or grazes something.* Closest approach to Earth is
   1.29 AU — 500 times the Earth–Moon distance.
 - ❌ *Instant catastrophe.* Earth takes about four years to freeze.
-- ❌ *Mars becomes an Eden.* A marginal window, one latitude, part of the year.
+- ❌ *Mars becomes an Eden.* A marginal window, one latitude, part of the year —
+  and in a shooting gallery.
 - ❌ *A stable new solar system afterwards.* Seven crossing orbit pairs.
+- ❌ *Meteor storms as the black hole passes.* The belt is scattered in 2047, but
+  the scattered bodies take centuries to reach anything. The impact era belongs to
+  Act III and after, not to the passage.
+- ❌ *The impacts finish off an already-frozen Earth in a spectacular finale.* One
+  ≥1 km object every ~200 years is a slow statistical menace, not an extinction
+  sequence — and Earth is already uninhabitable from cold long before it matters.
 
 ---
 
