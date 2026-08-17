@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(python -m pytest *)",
+      "Bash(python -m orbital_climate.cli insolation *)",
+      "Bash(python climate_from_simulations.py *)",
+      "Bash(python extract_earth_elements.py *)",
+      "Bash(python rank_run_impact.py *)",
+      "Bash(python convert_orbits_to_parquet.py *)",
+      "Bash(python solar_system_bh_rebound26.py *)"
+    ]
+  }
+}

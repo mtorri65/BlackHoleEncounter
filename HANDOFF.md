@@ -266,13 +266,29 @@ results are **not yet written into any document** (see below).
    duplicating Part VI's. Refer to that material as "§8" until it is renumbered.
 4. **`Script_Summaries.pdf`** is dated 2026-07-23 and 16 of 42 scripts have
    changed or appeared since. No markdown source exists.
-5. **Book assets are untracked**: `bh_sky_track_full.png`,
-   `bh_encounter_storyboard.png`, `bh_sky_track_2047.png`,
-   `bh_sky_track_1885_1900.png`, `bh_observing_window.png`, and three MP4s.
-   Decide whether they belong in the repo.
-6. **`sky_stars.csv` / `sky_constellation_lines.csv`** are gitignored by the
-   blanket `*.csv` rule, so a fresh clone has no star data and the sky charts
-   silently fall back to plain labels. Re-run `fetch_constellation_data.py`.
+5. ~~**Book assets are untracked.**~~ **Done** — the five PNGs and three MP4s are
+   committed, along with `.claude/settings.json` and **all 21 top-level
+   `simulations/*.csv`**, which had been excluded by the `simulations/` and
+   `*.csv` ignore rules and existed only on local disk.
+
+   The retired sweep's 10 CSVs were the reason to do it: its raw runs were deleted
+   on 2026-08-15 to reclaim 172.7 GB, so unlike the current sweep's products they
+   **cannot be regenerated at any price**. The current sweep's 11 are regenerable
+   from `simulations/20260811_184731/`, but only at ~4 hours of compute for the
+   five climate passes alone.
+
+   > **`.gitignore` was deliberately left unchanged; the files were force-added.**
+   > Broadening the rule would sweep in the per-run `.csv` files under
+   > `simulations/<stamp>/<run>/`, which are large and genuinely disposable.
+   > **Any future derived CSV therefore needs `git add -f`** or it will be silently
+   > skipped — this is the easiest way to lose new sweep products.
+
+6. **`sky_stars.csv` / `sky_constellation_lines.csv` remain excluded, on purpose.**
+   Unlike the derived sweep products they are a reproducible ~250 KB download:
+   re-run `fetch_constellation_data.py`. The cost of a fresh clone missing them is
+   that `sky_backdrop.py` falls back to plain constellation labels and the star
+   field silently disappears, which reads like a plotting bug rather than missing
+   data. Worth committing them too if that trap bites anyone again.
 
 ---
 
