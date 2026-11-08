@@ -76,13 +76,21 @@ AU_M = AU_KM * 1000.0
 AU_PER_DAY2_TO_M_S2 = AU_M / (86400.0 ** 2)
 
 PLANET_MASSES_MSUN = {
-    "mercury": 1.651e-7, "venus": 2.447e-6, "earth": 3.003e-6, "mars": 3.227e-7,
+    "mercury": 1.651e-7, "venus": 2.447e-6, "earth": 3.0034896155e-6, "mars": 3.227e-7,
     "jupiter": 9.5479e-4, "saturn": 2.8585e-4, "uranus": 4.3662e-5, "neptune": 5.1513e-5,
 }
 
-# Moon, in solar masses (7.342e22 kg / 1.98892e30 kg). Kept out of the planet
-# table because it is not sourced from PLANET_MASSES_MSUN's loop.
-MOON_MASS_MSUN = 3.6923e-8
+# Moon, in solar masses. Kept out of the planet table because it is not sourced
+# from PLANET_MASSES_MSUN's loop.
+#
+# Earth and Moon are the de440 values (GM_earth / GM_sun, GM_moon / GM_sun), to
+# match the ephemeris the initial states come from. They used to be 3.003e-6 and
+# 3.6923e-8, together 0.017% short. The Earth-Moon orbit is set by their sum, so
+# the simulated month ran ~13 minutes long and the Moon's phase drifted
+# ~167 deg/century from the epoch: by 2047 new moons came ~22 days late. Earth's
+# path round the Sun was unaffected. Runs made before this fix (everything up to
+# simulations/20261030_232613) carry that drift in any Moon-around-Earth figure.
+MOON_MASS_MSUN = 3.6943033498e-8
 
 # Skyfield targets (de440s: inner planets as centers, outers as barycenters)
 SKYFIELD_KEYS = {

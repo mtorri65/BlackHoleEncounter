@@ -71,7 +71,13 @@ script either consumes its output files or duplicates a fragment of its logic. I
   but no compensating change to Earth's — which injected ~12.4 m/s of spurious momentum
   and stretched Earth's year to 365.570 days. Runs made before that fix (all of
   `simulations/20260724_230314`) carry a seasonal drift of +0.33 d/yr; see the docstring
-  of `plot_local_sky.py`.
+  of `plot_local_sky.py`. Separately, the Earth and Moon masses were 0.017% short of
+  de440 until 2026-11-07, so the simulated month ran ~13 min long and the lunar phase
+  drifted ~167°/century (22 days by 2047). Earth's solar orbit was unaffected, but any
+  Moon-around-Earth figure from a run before `simulations/20261107_205226` is wrong.
+  `astrometric_detectability.py`, `find_bh_captures.py`, `convert_npz_to_csv.py` and
+  `post_orbit_compare_geocentric_fixed4.py` still carry their own copies of the old
+  masses.
 - Integrates with REBOUND's IAS15 adaptive integrator.
 - Logs the trajectory at `output_interval_days`, optionally at two rates: setting
   `output_dense_window_days` logs every `output_dense_interval_days` within that many days

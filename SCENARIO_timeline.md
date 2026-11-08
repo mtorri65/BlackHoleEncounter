@@ -226,8 +226,8 @@ something dark.**
 
 ### 28 August – 11 September 2047 · Venus, Earth and the Moon
 
-Venus at 1.210 AU on the 28th; Earth at 1.291 AU on 10 September; the Moon at
-1.290 AU the day after.
+Venus at 1.210 AU on the 28th; Earth at 1.291 AU early on 10 September; the Moon,
+on Earth's far side, at 1.294 AU seven hours later.
 
 **No near miss for Earth — and decisive anyway.** Within months its semi-major
 axis has gone from 1.000 to 1.486 AU and its eccentricity from 0.017 to 0.236.
@@ -236,11 +236,13 @@ Sun and the Earth by different amounts in different directions, and what survive
 is the difference.
 
 **The Moon comes through it** — still bound, still ordinary, orbiting a world
-about to freeze. Its orbit is essentially untouched: the semi-major axis ends at
-about 386 000 km against today's 384 400, and the Earth–Moon separation stays
-inside its normal 357 000–407 000 km perigee/apogee spread for the entire
-integration. (The run ends with the Moon near apogee at 402 000 km, which is
-where it happens to be, not a widened orbit.) The binding is verified on relative
+about to freeze. Its orbit is untouched: averaged over a decade, its semi-major
+axis about Earth is 383 400 km both before the encounter and a century after it,
+and the Earth–Moon separation stays inside its normal 356 000–407 000 km
+perigee/apogee spread for the entire integration. (Earlier editions compared an
+end-of-run snapshot, ~386 000 km, with today's 384 400 km, which looked like a
+slight widening; it was only where in its month the Moon happened to be.) The
+binding is verified on relative
 state vectors at every output step in
 [`SCENARIO_post_flyby_system.md`](SCENARIO_post_flyby_system.md) §4.
 

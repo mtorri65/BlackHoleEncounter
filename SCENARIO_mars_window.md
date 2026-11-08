@@ -10,14 +10,17 @@ conditions under which liquid water is thermodynamically permitted.
 simulations/20260811_184731/20260811_184731__rp0p75__vinf25__inc30__toff59132__Om0__om30
 ```
 
-*(That sweep's raw runs are no longer on disk. The sky positions and the
-launch-window figures in §1 and §6 come from a re-run of the same configuration
-with every day logged,
-`simulations/20261030_232613/20261030_232613__rp0p75__vinf25__inc30__toff59132__Om0__om30`,
-made on 2026-10-30 under REBOUND 5.2.2. It reproduces §2's elements — Earth
-1.487, Mars 1.336, Saturn 1650.6 AU. The hours in §1 and §4 come from a further
-re-integration of September 2047 at 10-minute steps, which matches the daily log
-to within 8 km.)*
+*(That sweep's raw runs are no longer on disk. Figures from §1 on come from a
+re-run of the same configuration with every day logged,
+`simulations/20261107_205226/20261107_205226__rp0p75__vinf25__inc30__toff59132__Om0__om30`,
+made on 2026-11-07 under REBOUND 5.2.2 with the engine's Earth and Moon masses
+corrected to the de440 values (see §9). It reproduces §2's elements — Earth–Moon
+barycentre 1.486, Mars 1.336, Saturn 1650.6 AU. The sky positions, launch
+windows and noon times were first computed on an earlier daily re-run
+(`20261030_232613`, old masses); planetary positions in the two agree to within
+40 000 km through 2055, so those figures stand, and only the Moon's position
+about Earth and the hours of Mercury's close passes changed. The hours in §1 and
+§4 come from a further re-integration of September 2047 at 10-minute steps.)*
 
 Selected from 4032 runs against three criteria: Mars made habitable, Earth and
 Moon rendered uninhabitable, another planet ejected — ideally as a satellite of
@@ -51,17 +54,19 @@ Closest approach of each body to the hole:
 | Jupiter | 4.92 AU | 2047-05-10 |
 | **Mars** | **0.810 AU** | 2047-06-28 |
 | Venus | 1.210 AU | 2047-08-28 |
-| Earth | 1.291 AU | 2047-09-10, 05:34 UTC |
-| Moon | 1.290 AU | 2047-09-10, 19:10 UTC |
+| Earth | 1.291 AU | 2047-09-10, 05:43 UTC |
+| Moon | 1.294 AU | 2047-09-10, 12:25 UTC |
 | **Mercury** | **0.025 AU** | **2048-07-03** |
 | Saturn | 7.41 AU | 2048-11-25 |
 
 Mercury's entry is not a flyby. By July 2048 it is already in orbit **around the
 black hole**, and 0.025 AU is the periapsis of that orbit (§3).
 
-Earth's closest approach is the nearest of the whole encounter: 1.2914 AU
-(193 million km) at a relative speed of 68.6 km/s. The time is good to about a
-minute.
+Earth's closest approach is the nearest of the whole encounter: 1.2913 AU
+(193 million km) at a relative speed of 68.6 km/s. The Moon, on the far side of
+Earth from the hole that morning, passes 0.0024 AU (360 000 km) farther out,
+seven hours later. *(Earlier editions gave Earth 05:34 UTC and the Moon 1.290 AU
+at 19:10 UTC; both came from a run whose Moon was 22 days out of phase — §9.)*
 
 ### Seen from Earth
 
@@ -121,7 +126,7 @@ approximate.)*
 | **Mercury** | 0.387 | — | — | **captured by the black hole** |
 | Venus | 0.723 | 0.989 | 0.200 | bound to Sun |
 | **Earth** | 1.000 | **1.486** | **0.236** | bound, frozen |
-| Moon | — | — | — | **still bound to Earth**, a ≈ 383 500 km |
+| Moon | — | — | — | **still bound to Earth**, a ≈ 383 400 km |
 | **Mars** | 1.524 | **1.336** | **0.217** | bound to Sun |
 | Jupiter | 5.206 | 5.011 | 0.170 | bound to Sun |
 | **Saturn** | 9.573 | **1650.6** | **0.994** | bound, barely |
@@ -132,10 +137,10 @@ approximate.)*
 Mars becomes the inner of the two, and the one with a temperate season.
 
 The Moon survives, its orbit essentially untouched, and freezes with Earth. Its
-semi-major axis about Earth averages 383 460 km over 1990–2000 and 383 470 km over
+semi-major axis about Earth averages 383 400 km over 1990–2000 and 383 410 km over
 2100–2200. *(Earlier editions gave "402 000 km against today's 384 000", which
 read as a widened orbit. That figure was just the Moon's distance at the run's
-final step, a point on an orbit that ranges over 357 000–406 000 km.)*
+final step, a point on an orbit that ranges over 356 000–407 000 km.)*
 Note that `__planets_run_deltas.csv` is misleading on this point: it reports the
 Moon's osculating *solar* orbit, which differs from Earth's by the Moon's
 ~1 km/s orbital velocity and can look like a separate object when it is not.
@@ -176,9 +181,9 @@ falls back for its first close pass:
 | 1 Feb | 0.735 | 110.0 | 0.732–0.738 (farthest, 12 Feb: 0.738) |
 | 1 Mar | 0.731 | 109.4 | 0.687–0.731 |
 | 1 Apr | 0.684 | 102.3 | 0.593–0.684 |
-| 1 May | 0.589 | 88.1 | 0.422–0.589 |
-| 1 Jun | 0.415 | 62.1 | 0.087–0.415 |
-| 1 Jul | 0.066 | 9.9 | 0.025–0.382 (**closest, 3 Jul: 0.025 AU**) |
+| 1 May | 0.589 | 88.1 | 0.423–0.589 |
+| 1 Jun | 0.415 | 62.1 | 0.088–0.415 |
+| 1 Jul | 0.067 | 9.9 | 0.025–0.382 (**closest, 3 Jul: 0.025 AU**) |
 | 1 Aug 2048 | 0.390 | 58.3 | 0.390–0.569 |
 
 After that the orbit settles and does not change. From 2050 to the end of the
@@ -192,16 +197,16 @@ The first close passes, for dating scenes:
 
 | closest to the hole (UTC) | distance | farthest from the hole | distance |
 |---|---:|---|---:|
-| 3 Jul 2048, 02:55 | 0.0250 AU | 12 Feb 2048 | 0.738 AU |
-| 24 Mar 2049, 02:13 | 0.0272 | 12 Nov 2048 | 0.719 |
-| 11 Dec 2049, 21:38 | 0.0278 | 2 Aug 2049 | 0.717 |
-| 31 Aug 2050, 10:51 | 0.0281 | 22 Apr 2050 | 0.717 |
-| 20 May 2051, 21:53 | 0.0282 | 10 Jan 2051 | 0.716 |
-| 7 Feb 2052, 07:57 | 0.0283 | 29 Sep 2051 | 0.716 |
-| 26 Oct 2052, 17:32 | 0.0284 | 18 Jun 2052 | 0.716 |
+| 3 Jul 2048, ~04:00 | 0.0250 AU | 12 Feb 2048 | 0.738 AU |
+| 24 Mar 2049, ~04:00 | 0.0272 | 12 Nov 2048 | 0.719 |
+| 12 Dec 2049, ~00:00 | 0.0278 | 3 Aug 2049 | 0.717 |
+| 31 Aug 2050, ~14:00 | 0.0281 | 22 Apr 2050 | 0.717 |
+| 21 May 2051, ~02:00 | 0.0282 | 10 Jan 2051 | 0.716 |
+| 7 Feb 2052, ~13:00 | 0.0283 | 29 Sep 2051 | 0.716 |
+| 26 Oct 2052, ~23:00 | 0.0284 | 18 Jun 2052 | 0.716 |
 
 Seen from Earth, the hole is 95° west of the Sun (morning sky) at the 24 March 2049
-pass and 64° east (evening sky) at the 11 December pass, both times in Aquarius,
+pass and 64° east (evening sky) at the December 2049 pass, both times in Aquarius,
 10.6 and 15.6 AU away. At those distances Mercury's whole orbit is tiny on the sky:
 at a close pass it is at most 9′ (March) or 6′ (December) from the hole.
 
@@ -214,9 +219,13 @@ at about 5.3 AU a year: 3 AU on 1 January 2048, 32 AU by 2053, 283 AU by 2100 an
 *(Distances are from the daily re-run noted under the run path. Close passes are
 taken from the orbit's shape, since at periapsis Mercury moves about 0.05 AU a
 day, too fast for daily samples to catch the minimum: each pass is timed from
-Mercury's orbit about the hole a day and two days beforehand, and the two agree to
-the minute. Earlier editions dated three passes a day late (12 Dec 2049,
-21 May 2051, 27 Oct 2052) by taking the nearest daily sample. For late 2047 that
+Mercury's orbit about the hole a day and two days beforehand. The two estimates
+agree to the minute, but the model itself does not pin the hour that finely:
+correcting Earth's and the Moon's masses by 0.017% (§9) moved the passes 1–6
+hours later, the shift growing with each orbit, because Mercury's capture
+amplifies small differences. Treat the hours as good to several hours, and a
+pass near midnight (12 Dec 2049) as able to fall on either date. Distances did not
+change. For late 2047 that
 orbit-shape calculation is not reliable: the Sun, still close to the hole,
 distorts it so much that it predicts close passes of 0.008–0.016 AU that never
 happen. The measured distance rises steadily through those months.)*
@@ -292,9 +301,9 @@ growth is already slowing: it peaked on 25 August, at 0.0102 AU a day, and the
 closest approach on 10 September comes after the fastest change, not with it.
 
 Earth's distance from the Sun on the new orbit runs from **1.134 AU at perihelion
-to 1.839 AU at aphelion**. The first aphelion is **15 July 2048** (about 10:00 UTC,
-1.8386 AU), the first perihelion **12 June 2049** (1.134 AU); after that they
-alternate every 662 days (aphelion 8 May 2050, perihelion 4 April 2051, …).
+to 1.839 AU at aphelion**. The first aphelion is **15 July 2048** (about 08:00 UTC,
+1.8385 AU), the first perihelion **12 June 2049** (1.134 AU); after that they
+alternate every 662 days (aphelion 9 May 2050, perihelion 4 April 2051, …).
 
 ### Noon leaves the clock
 
@@ -549,6 +558,15 @@ models on a latitude grid: no clouds, no ocean circulation, no weather. The
 Earth model has no ice-sheet dynamics. The Mars model has no water cycle at all
 — no reservoir, no evaporative cooling, no transport — and reports daily means,
 while Mars's real diurnal range is 60–100 K.
+
+**The Moon's phase was wrong until 2026-11-07.** The engine's Earth and Moon
+masses were together 0.017% short of the ephemeris they start from, so the
+simulated month ran about 13 minutes long and the Moon fell steadily behind: by
+2047 its phases were 22 days late. Earth's orbit about the Sun was unaffected,
+but anything that depends on where the Moon is around Earth was not — the Moon's
+closest approach to the hole in §1 among them. The masses now match de440; the
+re-run's lunar phases stay within an hour of the real Moon's through 2047, and
+the figures here come from it.
 
 **The launch windows (§6) are mission-design estimates, not integrated
 trajectories.** The planets' positions come from the run, but each transfer arc
