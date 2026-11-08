@@ -252,6 +252,13 @@ actually have concluded, argued about, or refused to believe is yours — see §
 - **The Sun is smaller and moves**: it shrinks from 32′ to between 28.2′ (at
   perihelion) and 17.4′ (at aphelion). Over one 662-day year the Sun visibly
   changes size by a factor of 1.6.
+- **Noon drifts round the clock.** Earth spins exactly as before, but the Sun now
+  takes 662 days to work round the sky, so it reaches its highest point earlier by
+  the clock every day: 1.76 minutes on average (½ to 2½ depending on distance),
+  once round the whole clock face every 2.2 calendar years. By September 2048 the
+  midday Sun stands at midnight; at Bristol on 12 June 2049 noon is at 17:46 BST.
+  The seasons slip against the calendar too. Dates and heights are in §4 of
+  [`SCENARIO_mars_window.md`](SCENARIO_mars_window.md).
 - **Every solar eclipse is now total.** The Moon's apparent size is unchanged, so
   it always exceeds the shrunken Sun. Annular eclipses become impossible.
 - **Totality lasts roughly 50 minutes** (against today's 7.5 maximum), and the

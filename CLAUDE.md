@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-~41 standalone Python scripts in the repo root, simulating a close flyby of a passing
+~42 standalone Python scripts in the repo root, simulating a close flyby of a passing
 black hole through the solar system (REBOUND N-body integration), plus post-processing,
 visualization, a climate thread that asks what the perturbed orbits do to Earth and Mars,
 and a separate analysis thread that checks whether the BH's astrometric signature would be
@@ -18,7 +18,7 @@ background is in `orbital-climate-model-context.md`.
 
 `Script_Summaries.pdf` in the repo root has a full purpose/inputs/outputs/techniques
 write-up for every script — consult it before re-deriving what a script does from scratch.
-**It is out of date**: it dates from 2026-07-23, and 15 of the 41 scripts have been added
+**It is out of date**: it dates from 2026-07-23, and 16 of the 42 scripts have been added
 or substantially changed since — the whole scenario-selection and climate thread, all the
 sky-track/export tooling, and edits to the core engine itself. Treat a missing entry as
 "not yet written up", not "no such script", and check a script's own docstring before
@@ -151,6 +151,11 @@ produced the expected files in the expected place.
    above the triple point **and** below boiling at the local pressure — a weaker
    triple-point-only test is kept alongside as `above_water_triple_point` for comparison,
    and the two disagree by a large factor, so do not substitute one for the other.
+   `launch_windows.py` works on one chosen run rather than a sweep: an Earth→Mars
+   porkchop search (Lambert solves between logged planet states) that finds launch
+   windows before and after the encounter. It needs a run logged at a uniform 1-day
+   cadence (`output_interval_days: 1`, `output_dense_window_days: 0`), which the
+   sweep's two-rate logs are not.
 5. **Sky-track charts** (where the BH appears on the sky, for the narrative documents):
    `animate_sky_track.py` is the entry point, producing MP4/GIF animations paced either by
    constant apparent speed (`--pace arc`, the default) or linearly in time; `--from-year` /
